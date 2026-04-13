@@ -11,7 +11,7 @@ import 'datetime_model.dart';
 export 'datetime_model.dart';
 
 /// Create a component for date time picker that matching with
-/// CreateDailySchedules page on the time field
+/// CreateDailySchedules page on the time field..
 ///
 class DatetimeWidget extends StatefulWidget {
   const DatetimeWidget({super.key});
