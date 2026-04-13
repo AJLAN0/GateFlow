@@ -40,12 +40,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
       debugLogDiagnostics: true,
       refreshListenable: appStateNotifier,
       navigatorKey: appNavigatorKey,
-      errorBuilder: (context, state) => Widget(),
+      errorBuilder: (context, state) => Container(),
       routes: [
         FFRoute(
           name: '_initialize',
           path: '/',
-          builder: (context, _) => Widget(),
+          builder: (context, _) => Container(),
         ),
         FFRoute(
           name: AuthenticationWidget.routeName,
