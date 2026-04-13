@@ -1,0 +1,112 @@
+// Export pages
+export '/loginpages/authentication/authentication_widget.dart'
+    show AuthenticationWidget;
+export '/parent_new/guardians_info/guardians_info_widget.dart'
+    show GuardiansInfoWidget;
+export '/bus_pages/bus_supervisor_dashboard/bus_supervisor_dashboard_widget.dart'
+    show BusSupervisorDashboardWidget;
+export '/bus_pages/assigned_studentslist/assigned_studentslist_widget.dart'
+    show AssignedStudentslistWidget;
+export '/bus_pages/confirm_boarding/confirm_boarding_widget.dart'
+    show ConfirmBoardingWidget;
+export '/bus_pages/update_student_status/update_student_status_widget.dart'
+    show UpdateStudentStatusWidget;
+export '/loginpages/forgot_password/forgot_password_widget.dart'
+    show ForgotPasswordWidget;
+export '/parent_new/manage_guardians/manage_guardians_widget.dart'
+    show ManageGuardiansWidget;
+export '/school_pages/create_daily_schedules/create_daily_schedules_widget.dart'
+    show CreateDailySchedulesWidget;
+export '/school_pages/parent_verification/parent_verification_widget.dart'
+    show ParentVerificationWidget;
+export '/school_pages/school_dashboard/school_dashboard_widget.dart'
+    show SchoolDashboardWidget;
+export '/loginpages/splash/splash_widget.dart' show SplashWidget;
+export '/parent_new/bus/bus_widget.dart' show BusWidget;
+export '/parent_notificationxxxxx/parent_notificationxxxxx_widget.dart'
+    show ParentNotificationxxxxxWidget;
+export '/parent_new/dash/dash_widget.dart' show DashWidget;
+export '/request_sxxxxx/request_sxxxxx_widget.dart' show RequestSxxxxxWidget;
+export '/parent_new/request_successful/request_successful_widget.dart'
+    show RequestSuccessfulWidget;
+export '/school_pages/system_management/s_mmain/s_mmain_widget.dart'
+    show SMmainWidget;
+export '/school_pages/system_management/manage_parent/parent_add/parent_add_widget.dart'
+    show ParentAddWidget;
+export '/school_pages/system_management/manage_bus_driver/driver_main/driver_main_widget.dart'
+    show DriverMainWidget;
+export '/school_pages/system_management/manage_bus_driver/driver/driver_add/driver_add_widget.dart'
+    show DriverAddWidget;
+export '/school_pages/system_management/manage_guardian/guardians_m/guardians_m_widget.dart'
+    show GuardiansMWidget;
+export '/school_pages/system_management/manage_guardian/guardian_details/guardian_details_widget.dart'
+    show GuardianDetailsWidget;
+export '/school_pages/system_management/manage_guardian/approved_g_d/approved_g_d_widget.dart'
+    show ApprovedGDWidget;
+export '/school_pages/time_request_d/time_request_d_widget.dart'
+    show TimeRequestDWidget;
+export '/school_pages/time_request/time_request_widget.dart'
+    show TimeRequestWidget;
+export '/school_pages/system_management/manag_student/student_add/student_add_widget.dart'
+    show StudentAddWidget;
+export '/parent_new/view_childern/view_childern_widget.dart'
+    show ViewChildernWidget;
+export '/school_pages/system_management/manage_bus_driver/bus/bus_add/bus_add_widget.dart'
+    show BusAddWidget;
+export '/parent_new/request_pic_dro/request_pic_dro_widget.dart'
+    show RequestPicDroWidget;
+export '/parent_new/add_guardian/add_guardian_widget.dart'
+    show AddGuardianWidget;
+export '/school_pages/system_management/manage_bus_driver/bus/bus_manage/bus_manage_widget.dart'
+    show BusManageWidget;
+export '/school_pages/system_management/manage_bus_driver/driver/driver_manage/driver_manage_widget.dart'
+    show DriverManageWidget;
+export '/school_pages/system_management/manage_parent/parent_manage/parent_manage_widget.dart'
+    show ParentManageWidget;
+export '/school_pages/system_management/manag_student/student_manage/student_manage_widget.dart'
+    show StudentManageWidget;
+export '/parent_new/car/car_widget.dart' show CarWidget;
+export '/guardian/dash_guardian/dash_guardian_widget.dart'
+    show DashGuardianWidget;
+export '/parent_new/request_successful_g/request_successful_g_widget.dart'
+    show RequestSuccessfulGWidget;
+export '/school_pages/system_management/manage_parent/parent_edit/parent_edit_widget.dart'
+    show ParentEditWidget;
+export '/school_pages/system_management/manag_student/student_edit/student_edit_widget.dart'
+    show StudentEditWidget;
+export '/school_pages/system_management/manage_bus_driver/driver/driver_edit/driver_edit_widget.dart'
+    show DriverEditWidget;
+export '/school_pages/system_management/manage_bus_driver/bus/bus_edit/bus_edit_widget.dart'
+    show BusEditWidget;
+export '/school_pages/student_status/student_status_widget.dart'
+    show StudentStatusWidget;
+export '/school_pages/bus_status/bus_status_widget.dart' show BusStatusWidget;
+export '/school_pages/manage_schedules/manage_schedules_widget.dart'
+    show ManageSchedulesWidget;
+export '/school_pages/bus_status_view/bus_status_view_widget.dart'
+    show BusStatusViewWidget;
+export '/bus_pages/bus_driver_profile/bus_driver_profile_widget.dart'
+    show BusDriverProfileWidget;
+export '/bus_pages/bus_notifications/bus_notifications_widget.dart'
+    show BusNotificationsWidget;
+export '/parent_new/parent_profile/parent_profile_widget.dart'
+    show ParentProfileWidget;
+export '/school_pages/admin_profile/admin_profile_widget.dart'
+    show AdminProfileWidget;
+export '/guardian/profile_g/profile_g_widget.dart' show ProfileGWidget;
+export '/school_pages/school_notification/school_notification_widget.dart'
+    show SchoolNotificationWidget;
+export '/school_pages/student_status_view_bus/student_status_view_bus_widget.dart'
+    show StudentStatusViewBusWidget;
+export '/school_pages/student_status_view_bus_car/student_status_view_bus_car_widget.dart'
+    show StudentStatusViewBusCarWidget;
+export '/parent_new/request_status/request_status_widget.dart'
+    show RequestStatusWidget;
+export '/guardian/view_childern_g/view_childern_g_widget.dart'
+    show ViewChildernGWidget;
+export '/guardian/bus_g/bus_g_widget.dart' show BusGWidget;
+export '/guardian/car_g/car_g_widget.dart' show CarGWidget;
+export '/parent_new/parent_notifications/parent_notifications_widget.dart'
+    show ParentNotificationsWidget;
+export '/guardian/notifications_g/notifications_g_widget.dart'
+    show NotificationsGWidget;
