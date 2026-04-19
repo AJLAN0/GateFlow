@@ -93,7 +93,7 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('ParentNotifications');
                     },
                   ),
                   FlutterFlowIconButton(
@@ -106,7 +106,7 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('ParentProfile');
                     },
                   ),
                 ].divide(SizedBox(width: 8.0)),

@@ -5,6 +5,7 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../data/mock_state.dart';
 import 'package:provider/provider.dart';
 import 'confirm_boarding_model.dart';
 export 'confirm_boarding_model.dart';
@@ -180,7 +181,16 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
                   padding: EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                   child: FFButtonWidget(
                     onPressed: () {
-                      print('Button pressed ...');
+                      final mockState = Provider.of<MockState>(context, listen: false);
+                      mockState.updateStudentStatus('s1', StudentStatus.onBusToSchool);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('✅ Student boarding confirmed!'),
+                          backgroundColor: Color(0xFF22C55E),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
                     },
                     text: 'Scan QR Code',
                     options: FFButtonOptions(

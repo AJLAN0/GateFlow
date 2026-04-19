@@ -225,7 +225,7 @@ class _RequestSuccessfulWidgetState extends State<RequestSuccessfulWidget> {
                             ),
                             FFButtonWidget(
                               onPressed: () {
-                                print('Button pressed ...');
+                                context.pushNamed('Dash');
                               },
                               text: 'Back to Home',
                               options: FFButtonOptions(

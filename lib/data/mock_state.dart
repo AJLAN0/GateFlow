@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 enum StudentStatus { atHome, onBusToSchool, atSchool, onBusToHome, pickedUpByCar }
 enum RequestStatus { pending, approved, rejected }
 enum BusStatus { stationary, onRouteToSchool, onRouteToHome }
+enum UserRole { parent, schoolStaff, busDriver, guardian, none }
 
 class Student {
   final String id;
@@ -34,6 +35,8 @@ class ParentRequest {
 }
 
 class MockState extends ChangeNotifier {
+  UserRole currentUserRole = UserRole.none;
+
   List<Student> students = [
     Student(id: 's1', name: 'Khalid Jr.', grade: 'Grade 3', status: StudentStatus.atSchool, busId: 'b1'),
     Student(id: 's2', name: 'Aisha', grade: 'Grade 1', status: StudentStatus.atHome),
@@ -62,6 +65,11 @@ class MockState extends ChangeNotifier {
   void updateBusStatus(String id, BusStatus newStatus) {
     var bus = buses.firstWhere((b) => b.id == id);
     bus.status = newStatus;
+    notifyListeners();
+  }
+
+  void loginAs(UserRole role) {
+    currentUserRole = role;
     notifyListeners();
   }
 }

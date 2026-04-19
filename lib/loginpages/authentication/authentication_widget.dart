@@ -10,6 +10,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../data/mock_state.dart';
 import 'authentication_model.dart';
 export 'authentication_model.dart';
 
@@ -776,9 +777,20 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget>
                                                         children: [
                                                           FFButtonWidget(
                                                             onPressed: () {
-                                                              context.pushNamed('Dash');
+                                                              final email = _model.emailAddressTextController?.text.toLowerCase() ?? '';
+                                                              final mockState = Provider.of<MockState>(context, listen: false);
+                                                              if (email.contains('school')) {
+                                                                mockState.loginAs(UserRole.schoolStaff);
+                                                                context.pushNamed('SchoolDashboard');
+                                                              } else if (email.contains('bus')) {
+                                                                mockState.loginAs(UserRole.busDriver);
+                                                                context.pushNamed('BusSupervisorDashboard');
+                                                              } else {
+                                                                mockState.loginAs(UserRole.parent);
+                                                                context.pushNamed('Dash');
+                                                              }
                                                             },
-                                                            text: 'Log in as Parent',
+                                                            text: 'Log In',
                                                             options: FFButtonOptions(
                                                               width: 230.0,
                                                               height: 52.0,
@@ -790,39 +802,42 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget>
                                                               borderRadius: BorderRadius.circular(40.0),
                                                             ),
                                                           ),
-                                                          SizedBox(height: 12),
-                                                          FFButtonWidget(
-                                                            onPressed: () {
-                                                              context.pushNamed('SchoolDashboard');
-                                                            },
-                                                            text: 'Log in as School Staff',
-                                                            options: FFButtonOptions(
-                                                              width: 230.0,
-                                                              height: 52.0,
-                                                              color: Color(0xFFF7C530),
-                                                              textStyle: TextStyle(
-                                                                color: Color(0xFF0C3451),
-                                                                fontWeight: FontWeight.bold,
-                                                              ),
-                                                              borderRadius: BorderRadius.circular(40.0),
+                                                          SizedBox(height: 24),
+                                                          Text(
+                                                            'Quick Login (Mock)',
+                                                            style: FlutterFlowTheme.of(context).bodySmall.override(
+                                                              font: GoogleFonts.inter(),
+                                                              color: FlutterFlowTheme.of(context).secondaryText,
                                                             ),
                                                           ),
                                                           SizedBox(height: 12),
-                                                          FFButtonWidget(
-                                                            onPressed: () {
-                                                              context.pushNamed('BusSupervisorDashboard');
-                                                            },
-                                                            text: 'Log in as Bus Driver',
-                                                            options: FFButtonOptions(
-                                                              width: 230.0,
-                                                              height: 52.0,
-                                                              color: Color(0xFFF7C530),
-                                                              textStyle: TextStyle(
-                                                                color: Color(0xFF0C3451),
-                                                                fontWeight: FontWeight.bold,
+                                                          Row(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              InkWell(
+                                                                onTap: () {
+                                                                    Provider.of<MockState>(context, listen: false).loginAs(UserRole.parent);
+                                                                    context.pushNamed('Dash');
+                                                                },
+                                                                child: Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(border: Border.all(color: FlutterFlowTheme.of(context).secondaryText), borderRadius: BorderRadius.circular(20)), child: Text('Parent', style: TextStyle(color: FlutterFlowTheme.of(context).secondaryText, fontSize: 12))),
                                                               ),
-                                                              borderRadius: BorderRadius.circular(40.0),
-                                                            ),
+                                                              SizedBox(width: 8),
+                                                              InkWell(
+                                                                onTap: () {
+                                                                    Provider.of<MockState>(context, listen: false).loginAs(UserRole.schoolStaff);
+                                                                    context.pushNamed('SchoolDashboard');
+                                                                },
+                                                                child: Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(border: Border.all(color: FlutterFlowTheme.of(context).secondaryText), borderRadius: BorderRadius.circular(20)), child: Text('School', style: TextStyle(color: FlutterFlowTheme.of(context).secondaryText, fontSize: 12))),
+                                                              ),
+                                                              SizedBox(width: 8),
+                                                              InkWell(
+                                                                onTap: () {
+                                                                    Provider.of<MockState>(context, listen: false).loginAs(UserRole.busDriver);
+                                                                    context.pushNamed('BusSupervisorDashboard');
+                                                                },
+                                                                child: Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(border: Border.all(color: FlutterFlowTheme.of(context).secondaryText), borderRadius: BorderRadius.circular(20)), child: Text('Bus', style: TextStyle(color: FlutterFlowTheme.of(context).secondaryText, fontSize: 12))),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),

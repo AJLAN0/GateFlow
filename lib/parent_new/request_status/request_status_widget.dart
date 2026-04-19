@@ -792,7 +792,15 @@ class _RequestStatusWidgetState extends State<RequestStatusWidget> {
                       EdgeInsetsDirectional.fromSTEB(22.0, 10.0, 22.0, 0.0),
                   child: FFButtonWidget(
                     onPressed: () {
-                      print('Button pressed ...');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Request cancelled successfully'),
+                          backgroundColor: Color(0xFF0C3451),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                      context.safePop();
                     },
                     text: 'Cancel Request',
                     options: FFButtonOptions(

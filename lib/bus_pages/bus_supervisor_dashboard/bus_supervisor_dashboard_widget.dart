@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'bus_supervisor_dashboard_model.dart';
 export 'bus_supervisor_dashboard_model.dart';
 
@@ -116,7 +117,7 @@ class _BusSupervisorDashboardWidgetState
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('BusNotifications');
                     },
                   ),
                   FlutterFlowIconButton(
@@ -129,7 +130,7 @@ class _BusSupervisorDashboardWidgetState
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('BusDriverProfile');
                     },
                   ),
                 ].divide(SizedBox(width: 8.0)),
@@ -430,7 +431,7 @@ class _BusSupervisorDashboardWidgetState
                                         6.0, 8.0, 6.0, 0.0),
                                     child: FFButtonWidget(
                                       onPressed: () {
-                                        print('Button pressed ...');
+                                        context.pushNamed('ConfirmBoarding');
                                       },
                                       text: 'Scan QR Code',
                                       options: FFButtonOptions(
@@ -589,7 +590,7 @@ class _BusSupervisorDashboardWidgetState
                 ],
               ),
             ],
-          ),
+          ).animate().fade(duration: 500.ms).slideY(begin: 0.05, end: 0),
         ),
       ),
     );

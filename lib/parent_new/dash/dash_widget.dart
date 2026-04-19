@@ -8,6 +8,7 @@ import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dash_model.dart';
 export 'dash_model.dart';
 
@@ -96,7 +97,7 @@ class _DashWidgetState extends State<DashWidget> {
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('ParentNotifications');
                     },
                   ),
                   FlutterFlowIconButton(
@@ -109,7 +110,7 @@ class _DashWidgetState extends State<DashWidget> {
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('ParentProfile');
                     },
                   ),
                 ].divide(SizedBox(width: 8.0)),
@@ -991,7 +992,7 @@ class _DashWidgetState extends State<DashWidget> {
                 ],
               ),
             ],
-          ),
+          ).animate().fade(duration: 500.ms).slideY(begin: 0.1, end: 0),
         ),
       ),
     );

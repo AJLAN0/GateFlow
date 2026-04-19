@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'school_dashboard_model.dart';
 export 'school_dashboard_model.dart';
 
@@ -103,7 +104,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('SchoolNotification');
                     },
                   ),
                   FlutterFlowIconButton(
@@ -116,7 +117,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                       size: 20.0,
                     ),
                     onPressed: () {
-                      print('IconButton pressed ...');
+                      context.pushNamed('AdminProfile');
                     },
                   ),
                 ].divide(SizedBox(width: 8.0)),
@@ -521,7 +522,11 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                         thickness: 2.0,
                         color: FlutterFlowTheme.of(context).alternate,
                       ),
-                      Container(
+                      InkWell(
+                        onTap: () {
+                          context.pushNamed('ParentVerification');
+                        },
+                        child: Container(
                         width: 350.0,
                         height: 180.0,
                         decoration: BoxDecoration(
@@ -569,6 +574,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                           ),
                         ),
                       ),
+                      ),
                       Divider(
                         thickness: 2.0,
                         color: FlutterFlowTheme.of(context).alternate,
@@ -611,7 +617,11 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                 Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       20.0, 0.0, 20.0, 0.0),
-                                  child: Container(
+                                  child: InkWell(
+                                    onTap: () {
+                                      context.pushNamed('SMmain');
+                                    },
+                                    child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -707,11 +717,16 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                       ),
                                     ),
                                   ),
+                                  ),
                                 ),
                                 Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       20.0, 0.0, 20.0, 0.0),
-                                  child: Container(
+                                  child: InkWell(
+                                    onTap: () {
+                                      context.pushNamed('ManageSchedules');
+                                    },
+                                    child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -808,11 +823,16 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                       ),
                                     ),
                                   ),
+                                  ),
                                 ),
                                 Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       20.0, 0.0, 20.0, 0.0),
-                                  child: Container(
+                                  child: InkWell(
+                                    onTap: () {
+                                      context.pushNamed('TimeRequest');
+                                    },
+                                    child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -909,11 +929,16 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                       ),
                                     ),
                                   ),
+                                  ),
                                 ),
                                 Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       20.0, 0.0, 20.0, 0.0),
-                                  child: Container(
+                                  child: InkWell(
+                                    onTap: () {
+                                      context.pushNamed('StudentStatus');
+                                    },
+                                    child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -1009,11 +1034,16 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                       ),
                                     ),
                                   ),
+                                  ),
                                 ),
                                 Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       20.0, 0.0, 20.0, 0.0),
-                                  child: Container(
+                                  child: InkWell(
+                                    onTap: () {
+                                      context.pushNamed('BusStatus');
+                                    },
+                                    child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -1109,6 +1139,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                       ),
                                     ),
                                   ),
+                                  ),
                                 ),
                               ].divide(SizedBox(height: 14.0)),
                             ),
@@ -1121,7 +1152,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                   ),
                 ),
               ],
-            ),
+            ).animate().fade(duration: 500.ms).slideY(begin: 0.05, end: 0),
           ),
         ),
       ),
