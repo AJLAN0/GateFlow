@@ -23,10 +23,7 @@ export '/school_pages/school_dashboard/school_dashboard_widget.dart'
     show SchoolDashboardWidget;
 export '/loginpages/splash/splash_widget.dart' show SplashWidget;
 export '/parent_new/bus/bus_widget.dart' show BusWidget;
-export '/parent_notificationxxxxx/parent_notificationxxxxx_widget.dart'
-    show ParentNotificationxxxxxWidget;
 export '/parent_new/dash/dash_widget.dart' show DashWidget;
-export '/request_sxxxxx/request_sxxxxx_widget.dart' show RequestSxxxxxWidget;
 export '/parent_new/request_successful/request_successful_widget.dart'
     show RequestSuccessfulWidget;
 export '/school_pages/system_management/s_mmain/s_mmain_widget.dart'

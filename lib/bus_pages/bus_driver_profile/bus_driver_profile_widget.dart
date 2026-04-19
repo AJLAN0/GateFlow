@@ -7,6 +7,8 @@ import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../shared/role_bottom_nav.dart';
+import '../../shared/sign_out_tile.dart';
 import 'bus_driver_profile_model.dart';
 export 'bus_driver_profile_model.dart';
 
@@ -47,6 +49,7 @@ class _BusDriverProfileWidgetState extends State<BusDriverProfileWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'profile'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),
@@ -380,7 +383,7 @@ class _BusDriverProfileWidgetState extends State<BusDriverProfileWidget> {
                                   highlightColor: Colors.transparent,
                                   onTap: () async {
                                     context.pushNamed(
-                                        ParentNotificationxxxxxWidget
+                                        BusNotificationsWidget
                                             .routeName);
                                   },
                                   child: Row(
@@ -714,67 +717,7 @@ class _BusDriverProfileWidgetState extends State<BusDriverProfileWidget> {
                                 thickness: 1.0,
                                 color: FlutterFlowTheme.of(context).alternate,
                               ),
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 16.0, 0.0, 16.0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: Color(0x1AF44336),
-                                            borderRadius:
-                                                BorderRadius.circular(12.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Icon(
-                                              Icons.logout_rounded,
-                                              color: Colors.red,
-                                              size: 20.0,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                          'Sign Out',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyLarge
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyLarge
-                                                          .fontStyle,
-                                                ),
-                                                color: Colors.red,
-                                                letterSpacing: 0.0,
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyLarge
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(width: 14.0)),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: Colors.red,
-                                      size: 20.0,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              SignOutTile(),
                             ],
                           ),
                         ),

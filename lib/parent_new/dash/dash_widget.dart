@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'dash_model.dart';
 export 'dash_model.dart';
 
@@ -51,6 +52,7 @@ class _DashWidgetState extends State<DashWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'home'),
         backgroundColor: Color(0xFFF5F7FA),
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

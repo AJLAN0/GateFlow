@@ -45,7 +45,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: '_initialize',
           path: '/',
-          builder: (context, _) => AuthenticationWidget(),
+          builder: (context, _) => SplashWidget(),
         ),
         FFRoute(
           name: AuthenticationWidget.routeName,
@@ -113,19 +113,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => BusWidget(),
         ),
         FFRoute(
-          name: ParentNotificationxxxxxWidget.routeName,
-          path: ParentNotificationxxxxxWidget.routePath,
-          builder: (context, params) => ParentNotificationxxxxxWidget(),
-        ),
-        FFRoute(
           name: DashWidget.routeName,
           path: DashWidget.routePath,
           builder: (context, params) => DashWidget(),
-        ),
-        FFRoute(
-          name: RequestSxxxxxWidget.routeName,
-          path: RequestSxxxxxWidget.routePath,
-          builder: (context, params) => RequestSxxxxxWidget(),
         ),
         FFRoute(
           name: RequestSuccessfulWidget.routeName,

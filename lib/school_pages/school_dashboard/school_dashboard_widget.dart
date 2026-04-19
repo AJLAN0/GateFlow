@@ -10,6 +10,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'school_dashboard_model.dart';
 export 'school_dashboard_model.dart';
 
@@ -58,6 +59,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'home'),
         backgroundColor: Color(0xFFF5F7FA),
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

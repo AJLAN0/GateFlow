@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'request_status_model.dart';
 export 'request_status_model.dart';
 
@@ -46,6 +47,7 @@ class _RequestStatusWidgetState extends State<RequestStatusWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'requests'),
         backgroundColor: Color(0xFFF5F7FA),
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

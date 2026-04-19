@@ -31,15 +31,10 @@ class _SplashWidgetState extends State<SplashWidget> {
     super.initState();
     _model = createModel(context, () => SplashModel());
 
-    // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(
-        Duration(
-          milliseconds: 2000,
-        ),
-      );
-
-      context.pushNamed(AuthenticationWidget.routeName);
+      await Future.delayed(const Duration(milliseconds: 1400));
+      if (!mounted) return;
+      context.goNamed(AuthenticationWidget.routeName);
     });
   }
 

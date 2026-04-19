@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'time_request_model.dart';
 export 'time_request_model.dart';
 
@@ -53,6 +54,7 @@ class _TimeRequestWidgetState extends State<TimeRequestWidget>
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'requests'),
         backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

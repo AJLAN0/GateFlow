@@ -7,6 +7,7 @@ import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'view_childern_g_model.dart';
 export 'view_childern_g_model.dart';
 
@@ -60,6 +61,7 @@ class _ViewChildernGWidgetState extends State<ViewChildernGWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'children'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

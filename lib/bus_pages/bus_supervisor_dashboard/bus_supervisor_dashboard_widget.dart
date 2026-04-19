@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'bus_supervisor_dashboard_model.dart';
 export 'bus_supervisor_dashboard_model.dart';
 
@@ -71,6 +72,7 @@ class _BusSupervisorDashboardWidgetState
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'home'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

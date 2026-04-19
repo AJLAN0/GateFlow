@@ -7,6 +7,7 @@ import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'assigned_studentslist_model.dart';
 export 'assigned_studentslist_model.dart';
 
@@ -67,6 +68,7 @@ class _AssignedStudentslistWidgetState
       },
       child: Scaffold(
         key: scaffoldKey,
+        bottomNavigationBar: RoleBottomNav(current: 'students'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),
