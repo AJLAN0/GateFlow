@@ -1,4 +1,5 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
+import '../../data/mock_state.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -40,6 +41,8 @@ class _DashWidgetState extends State<DashWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final mockState = context.watch<MockState>();
+    final latestReq = mockState.requests.isNotEmpty ? mockState.requests.last : null;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -61,7 +64,7 @@ class _DashWidgetState extends State<DashWidget> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'Welcome, Khalid',
+                    'Welcome, Parent',
                     style: FlutterFlowTheme.of(context).titleMedium.override(
                           font: GoogleFonts.outfit(
                             fontWeight: FontWeight.w600,
@@ -599,7 +602,7 @@ class _DashWidgetState extends State<DashWidget> {
                                                                       0.0,
                                                                       0.0),
                                                           child: Text(
-                                                            'Today, Mar 15',
+                                                            latestReq != null ? 'Today' : '',
                                                             style: FlutterFlowTheme
                                                                     .of(context)
                                                                 .bodySmall
@@ -673,7 +676,7 @@ class _DashWidgetState extends State<DashWidget> {
                                                                       5.0,
                                                                       0.0),
                                                           child: Text(
-                                                            'Approved',
+                                                            latestReq?.status.name ?? 'None',
                                                             style: FlutterFlowTheme
                                                                     .of(context)
                                                                 .bodySmall

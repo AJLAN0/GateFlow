@@ -772,74 +772,59 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget>
                                                                   0.0,
                                                                   0.0,
                                                                   16.0),
-                                                      child: FFButtonWidget(
-                                                        onPressed: () {
-                                                          print(
-                                                              'Button pressed ...');
-                                                        },
-                                                        text: 'Sign In',
-                                                        options:
-                                                            FFButtonOptions(
-                                                          width: 230.0,
-                                                          height: 52.0,
-                                                          padding:
-                                                              EdgeInsetsDirectional
-                                                                  .fromSTEB(
-                                                                      0.0,
-                                                                      0.0,
-                                                                      0.0,
-                                                                      0.0),
-                                                          iconAlignment:
-                                                              IconAlignment
-                                                                  .start,
-                                                          iconPadding:
-                                                              EdgeInsetsDirectional
-                                                                  .fromSTEB(
-                                                                      0.0,
-                                                                      0.0,
-                                                                      0.0,
-                                                                      0.0),
-                                                          color:
-                                                              Color(0xFFF7C530),
-                                                          textStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .titleSmall
-                                                                  .override(
-                                                                    font: GoogleFonts
-                                                                        .interTight(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontStyle: FlutterFlowTheme.of(
-                                                                              context)
-                                                                          .titleSmall
-                                                                          .fontStyle,
-                                                                    ),
-                                                                    color: Color(
-                                                                        0xFF0C3451),
-                                                                    letterSpacing:
-                                                                        0.0,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                    fontStyle: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .titleSmall
-                                                                        .fontStyle,
-                                                                  ),
-                                                          elevation: 3.0,
-                                                          borderSide:
-                                                              BorderSide(
-                                                            color: Colors
-                                                                .transparent,
-                                                            width: 1.0,
+                                                      child: Column(
+                                                        children: [
+                                                          FFButtonWidget(
+                                                            onPressed: () {
+                                                              context.pushNamed('Dash');
+                                                            },
+                                                            text: 'Log in as Parent',
+                                                            options: FFButtonOptions(
+                                                              width: 230.0,
+                                                              height: 52.0,
+                                                              color: Color(0xFFF7C530),
+                                                              textStyle: TextStyle(
+                                                                color: Color(0xFF0C3451),
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                              borderRadius: BorderRadius.circular(40.0),
+                                                            ),
                                                           ),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      40.0),
-                                                        ),
+                                                          SizedBox(height: 12),
+                                                          FFButtonWidget(
+                                                            onPressed: () {
+                                                              context.pushNamed('SchoolDashboard');
+                                                            },
+                                                            text: 'Log in as School Staff',
+                                                            options: FFButtonOptions(
+                                                              width: 230.0,
+                                                              height: 52.0,
+                                                              color: Color(0xFFF7C530),
+                                                              textStyle: TextStyle(
+                                                                color: Color(0xFF0C3451),
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                              borderRadius: BorderRadius.circular(40.0),
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 12),
+                                                          FFButtonWidget(
+                                                            onPressed: () {
+                                                              context.pushNamed('BusSupervisorDashboard');
+                                                            },
+                                                            text: 'Log in as Bus Driver',
+                                                            options: FFButtonOptions(
+                                                              width: 230.0,
+                                                              height: 52.0,
+                                                              color: Color(0xFFF7C530),
+                                                              textStyle: TextStyle(
+                                                                color: Color(0xFF0C3451),
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                              borderRadius: BorderRadius.circular(40.0),
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ),

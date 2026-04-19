@@ -45,7 +45,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: '_initialize',
           path: '/',
-          builder: (context, _) => Container(),
+          builder: (context, _) => AuthenticationWidget(),
         ),
         FFRoute(
           name: AuthenticationWidget.routeName,

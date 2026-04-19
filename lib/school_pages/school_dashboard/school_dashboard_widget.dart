@@ -1,4 +1,5 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
+import '../../data/mock_state.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -31,10 +32,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
     super.initState();
     _model = createModel(context, () => SchoolDashboardModel());
 
-    // On page load action.
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      context.pushNamed(CreateDailySchedulesWidget.routeName);
-    });
+    // On page load action removed for MVP
   }
 
   @override
@@ -46,6 +44,12 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final mockState = context.watch<MockState>();
+    final studentsReady = mockState.students.where((s) => s.status == StudentStatus.atSchool).length;
+    final pickedUp = mockState.students.where((s) => s.status == StudentStatus.atHome || s.status == StudentStatus.pickedUpByCar).length;
+    final totalRequests = mockState.requests.length;
+    final onBus = mockState.students.where((s) => s.status == StudentStatus.onBusToHome || s.status == StudentStatus.onBusToSchool).length;
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -183,7 +187,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                         ),
                                       ),
                                       Text(
-                                        '94',
+                                        studentsReady.toString(),
                                         style: FlutterFlowTheme.of(context)
                                             .headlineSmall
                                             .override(
@@ -276,7 +280,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                         ),
                                       ),
                                       Text(
-                                        '33',
+                                        pickedUp.toString(),
                                         style: FlutterFlowTheme.of(context)
                                             .headlineSmall
                                             .override(
@@ -369,7 +373,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                         ),
                                       ),
                                       Text(
-                                        '128',
+                                        totalRequests.toString(),
                                         style: FlutterFlowTheme.of(context)
                                             .headlineSmall
                                             .override(
@@ -462,7 +466,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
                                         ),
                                       ),
                                       Text(
-                                        '61',
+                                        onBus.toString(),
                                         style: FlutterFlowTheme.of(context)
                                             .headlineSmall
                                             .override(

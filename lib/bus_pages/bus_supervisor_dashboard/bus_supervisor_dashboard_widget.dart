@@ -1,4 +1,5 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
+import '../../data/mock_state.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -83,7 +84,7 @@ class _BusSupervisorDashboardWidgetState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'Welcome, Mohammed',
+                    'Welcome, Bus Driver',
                     style: FlutterFlowTheme.of(context).titleMedium.override(
                           font: GoogleFonts.outfit(
                             fontWeight: FontWeight.w600,
@@ -529,7 +530,9 @@ class _BusSupervisorDashboardWidgetState
                                         6.0, 0.0, 6.0, 0.0),
                                     child: FFButtonWidget(
                                       onPressed: () {
-                                        print('Button pressed ...');
+                                        var appState = context.read<MockState>();
+                                        appState.updateStudentStatus('s1', StudentStatus.onBusToHome);
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student simulated as boarded!')));
                                       },
                                       text: 'Confirm Manually ',
                                       options: FFButtonOptions(
