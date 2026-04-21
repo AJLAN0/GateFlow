@@ -19,7 +19,7 @@ export 'confirm_boarding_model.dart';
 /// camera at student’s QR code”.
 /// - Primary button: “Scan QR Code”.
 /// - Divider text “OR”. test
-/// - Outlined button: “Confirm Manually”.
+/// - Outlined button: “Confirm Manually”.asfinaf
 /// - Footer note: “Boarding Verification: Ensure student identity matches
 /// before confirming boarding.”
 class ConfirmBoardingWidget extends StatefulWidget {
