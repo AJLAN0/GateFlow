@@ -247,7 +247,10 @@ class _AssignedStudentslistWidgetState
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 5.0, 16.0, 5.0),
-                        child: Container(
+                        child: InkWell(
+                          onTap: () => context.pushNamed('UpdateStudentStatus'),
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -397,11 +400,15 @@ class _AssignedStudentslistWidgetState
                             ),
                           ),
                         ),
+                        ),
                       ),
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 5.0, 16.0, 5.0),
-                        child: Container(
+                        child: InkWell(
+                          onTap: () => context.pushNamed('UpdateStudentStatus'),
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -551,11 +558,15 @@ class _AssignedStudentslistWidgetState
                             ),
                           ),
                         ),
+                        ),
                       ),
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 5.0, 16.0, 5.0),
-                        child: Container(
+                        child: InkWell(
+                          onTap: () => context.pushNamed('UpdateStudentStatus'),
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -705,11 +716,15 @@ class _AssignedStudentslistWidgetState
                             ),
                           ),
                         ),
+                        ),
                       ),
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 5.0, 16.0, 5.0),
-                        child: Container(
+                        child: InkWell(
+                          onTap: () => context.pushNamed('UpdateStudentStatus'),
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -858,6 +873,7 @@ class _AssignedStudentslistWidgetState
                               ].divide(SizedBox(width: 12.0)),
                             ),
                           ),
+                        ),
                         ),
                       ),
                     ].divide(SizedBox(height: 12.0)),

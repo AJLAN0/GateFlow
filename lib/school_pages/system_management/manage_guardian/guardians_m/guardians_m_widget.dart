@@ -3,9 +3,11 @@ import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
+import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'guardians_m_model.dart';
 export 'guardians_m_model.dart';
 
@@ -163,7 +165,14 @@ class _GuardiansMWidgetState extends State<GuardiansMWidget>
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 8.0, 0.0, 8.0),
-                                    child: Container(
+                                    child: InkWell(
+                                      onTap: () {
+                                        context.pushNamed(
+                                            GuardianDetailsWidget.routeName);
+                                      },
+                                      borderRadius:
+                                          BorderRadius.circular(12.0),
+                                      child: Container(
                                       width: double.infinity,
                                       height: 90.0,
                                       decoration: BoxDecoration(
@@ -282,8 +291,14 @@ class _GuardiansMWidgetState extends State<GuardiansMWidget>
                                                 ),
                                               ),
                                             ),
+                                            Icon(
+                                              Icons.chevron_right_rounded,
+                                              color: Color(0xFF8A94A6),
+                                              size: 20.0,
+                                            ),
                                           ],
                                         ),
+                                      ),
                                       ),
                                     ),
                                   ),
@@ -310,7 +325,14 @@ class _GuardiansMWidgetState extends State<GuardiansMWidget>
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 8.0, 0.0, 8.0),
-                                    child: Container(
+                                    child: InkWell(
+                                      onTap: () {
+                                        context.pushNamed(
+                                            ApprovedGDWidget.routeName);
+                                      },
+                                      borderRadius:
+                                          BorderRadius.circular(12.0),
+                                      child: Container(
                                       width: double.infinity,
                                       height: 90.0,
                                       decoration: BoxDecoration(
@@ -429,8 +451,14 @@ class _GuardiansMWidgetState extends State<GuardiansMWidget>
                                                 ),
                                               ),
                                             ),
+                                            Icon(
+                                              Icons.chevron_right_rounded,
+                                              color: Color(0xFF22C55E),
+                                              size: 20.0,
+                                            ),
                                           ],
                                         ),
+                                      ),
                                       ),
                                     ),
                                   ),

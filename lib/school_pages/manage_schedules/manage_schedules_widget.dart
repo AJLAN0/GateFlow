@@ -106,9 +106,7 @@ class _ManageSchedulesWidgetState extends State<ManageSchedulesWidget>
                   color: Color(0xFFD3A624),
                   size: 40.0,
                 ),
-                onPressed: () {
-                  print('IconButton pressed ...');
-                },
+                onPressed: () => context.pushNamed('CreateDailySchedules'),
               ),
             ),
             Expanded(

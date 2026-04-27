@@ -1,38 +1,22 @@
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '../../data/mock_state.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
+import '/flutter_flow/flutter_flow_util.dart';
+import '/index.dart';
+import '../../data/mock_state.dart';
+import '../../shared/gateflow_colors.dart';
 import '../../shared/role_bottom_nav.dart';
 import 'bus_supervisor_dashboard_model.dart';
+
 export 'bus_supervisor_dashboard_model.dart';
 
-/// Create a pageCreate a FlutterFlow mobile app UI (iOS style) for a
-/// “GateFlow” school transportation system – Bus Staff role.
+/// Bus driver / supervisor dashboard.
 ///
-/// Use a clean modern design with a deep blue primary color (#1F3CFF-like),
-/// white background, rounded cards (16–20 radius), soft shadows, and
-/// consistent spacing. Use English labels.
-///
-/// Generate the following 5 pages with navigation between them:
-///
-/// 1) Bus Supervisor Dashboard
-/// - AppBar: left avatar + “Welcome, Mohammed”, right icons: menu (⋮) and
-/// notification bell.
-/// - Title: “Bus Supervisor Dashboard”.
-/// - Large route card: “Bus Route 42A” + subtitle “Morning Route – Active”
-/// and a small bus icon.
-/// - Three stat cards in a row: “Total Students” (28), “On Bus” (12),
-/// “Dropped Off” (8).
-/// - Progress section card: “Trip Progress” with progress bar and “71%
-/// Complete”, and two labels: “Started: 7:30 AM” and “ETA: 8:45 AM”.
-/// - Primary button: “View Student List” → navigates to “Bus Students” page.
-/// - Info banner card: “Real-time Updates Active” + short description.
+/// Modernized layout: gradient hero with greeting and bus assignment,
+/// trip stats, trip progress card, primary CTA "View Student List", and
+/// quick access tiles for boarding, notifications, profile.
 class BusSupervisorDashboardWidget extends StatefulWidget {
   const BusSupervisorDashboardWidget({super.key});
 
@@ -48,8 +32,6 @@ class _BusSupervisorDashboardWidgetState
     extends State<BusSupervisorDashboardWidget> {
   late BusSupervisorDashboardModel _model;
 
-  final scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -59,540 +41,597 @@ class _BusSupervisorDashboardWidgetState
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final mockState = context.watch<MockState>();
+    final onBus = mockState.students
+        .where((s) =>
+            s.status == StudentStatus.onBusToHome ||
+            s.status == StudentStatus.onBusToSchool)
+        .length;
+    final droppedOff = mockState.students
+        .where((s) =>
+            s.status == StudentStatus.atHome ||
+            s.status == StudentStatus.pickedUpByCar)
+        .length;
+    final total = mockState.students.length;
+    final progress = total == 0 ? 0.0 : droppedOff / total;
+
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        key: scaffoldKey,
-        bottomNavigationBar: RoleBottomNav(current: 'home'),
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        appBar: AppBar(
-          backgroundColor: Color(0xFF0C3451),
-          automaticallyImplyLeading: false,
-          title: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Welcome, Bus Driver',
-                    style: FlutterFlowTheme.of(context).titleMedium.override(
-                          font: GoogleFonts.outfit(
-                            fontWeight: FontWeight.w600,
-                            fontStyle: FlutterFlowTheme.of(context)
-                                .titleMedium
-                                .fontStyle,
-                          ),
-                          color: Colors.white,
-                          fontSize: 24.0,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: FlutterFlowTheme.of(context)
-                              .titleMedium
-                              .fontStyle,
-                        ),
-                  ),
-                ].divide(SizedBox(width: 12.0)),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  FlutterFlowIconButton(
-                    borderRadius: 12.0,
-                    buttonSize: 40.0,
-                    fillColor: FlutterFlowTheme.of(context).secondaryBackground,
-                    icon: Icon(
-                      Icons.notifications_none_sharp,
-                      color: FlutterFlowTheme.of(context).primaryText,
-                      size: 20.0,
-                    ),
-                    onPressed: () {
-                      context.pushNamed('BusNotifications');
-                    },
-                  ),
-                  FlutterFlowIconButton(
-                    borderRadius: 12.0,
-                    buttonSize: 40.0,
-                    fillColor: FlutterFlowTheme.of(context).secondaryBackground,
-                    icon: Icon(
-                      Icons.person,
-                      color: FlutterFlowTheme.of(context).primaryText,
-                      size: 20.0,
-                    ),
-                    onPressed: () {
-                      context.pushNamed('BusDriverProfile');
-                    },
-                  ),
-                ].divide(SizedBox(width: 8.0)),
-              ),
-            ].divide(SizedBox(width: 12.0)),
-          ),
-          actions: [],
-          centerTitle: false,
-          elevation: 0.0,
-        ),
+        backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
-          top: true,
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
             children: [
-              Stack(
-                children: [
-                  Align(
-                    alignment: AlignmentDirectional(0.0, 0.0),
-                    child: Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bus Supervisor Dashboard',
-                              style: FlutterFlowTheme.of(context)
-                                  .headlineMedium
-                                  .override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FontWeight.bold,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .headlineMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Color(0xFF0C3451),
-                                    fontSize: 24.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.bold,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .headlineMedium
-                                        .fontStyle,
-                                  ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.all(20.0),
-                              child: Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF0C3451),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      blurRadius: 12.0,
-                                      color: Color(0x1A1F3CFF),
-                                      offset: Offset(
-                                        0.0,
-                                        4.0,
-                                      ),
-                                    )
-                                  ],
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(12.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.max,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Bus Route 42A',
-                                              style: FlutterFlowTheme.of(
-                                                      context)
-                                                  .titleLarge
-                                                  .override(
-                                                    font:
-                                                        GoogleFonts.interTight(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontStyle:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .titleLarge
-                                                              .fontStyle,
-                                                    ),
-                                                    color: Colors.white,
-                                                    fontSize: 22.0,
-                                                    letterSpacing: 0.0,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontStyle:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .titleLarge
-                                                            .fontStyle,
-                                                  ),
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsetsDirectional
-                                                  .fromSTEB(0.0, 4.0, 0.0, 0.0),
-                                              child: Text(
-                                                'Morning Route – Ready',
-                                                style: FlutterFlowTheme.of(
-                                                        context)
-                                                    .bodyMedium
-                                                    .override(
-                                                      font: GoogleFonts.inter(
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
-                                                      ),
-                                                      color: Color(0xCCFFFFFF),
-                                                      fontSize: 14.0,
-                                                      letterSpacing: 0.0,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      fontStyle:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .bodyMedium
-                                                              .fontStyle,
-                                                    ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.directions_bus_rounded,
-                                        color: Colors.white,
-                                        size: 32.0,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(20.0),
-                                    child: Container(
-                                      width: double.infinity,
-                                      height: 260.0,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            blurRadius: 12.0,
-                                            color: Color(0x1A000000),
-                                            offset: Offset(
-                                              0.0,
-                                              4.0,
-                                            ),
-                                          )
-                                        ],
-                                        borderRadius:
-                                            BorderRadius.circular(20.0),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(0.0),
-                                              child: Image.network(
-                                                'https://images.unsplash.com/photo-1533893813950-dd4788088021?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzU0OTEzMzJ8&ixlib=rb-4.1.0&q=80&w=1080',
-                                                width: double.infinity,
-                                                height: 272.0,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: AlignmentDirectional(
-                                                -0.01, -0.58),
-                                            child: Container(
-                                              width: 48.0,
-                                              height: 48.0,
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFF1A2E5A),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 3.0,
-                                                ),
-                                              ),
-                                              child: Align(
-                                                alignment: AlignmentDirectional(
-                                                    0.0, 0.0),
-                                                child: Icon(
-                                                  Icons.directions_bus_rounded,
-                                                  color: Color(0xFFE8B84D),
-                                                  size: 26.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: AlignmentDirectional(
-                                                -0.6, -0.4),
-                                            child: Container(
-                                              width: 28.0,
-                                              height: 28.0,
-                                              decoration: BoxDecoration(
-                                                color: Colors.green,
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2.0,
-                                                ),
-                                              ),
-                                              child: Align(
-                                                alignment: AlignmentDirectional(
-                                                    0.0, 0.0),
-                                                child: Icon(
-                                                  Icons.check_rounded,
-                                                  color: Colors.white,
-                                                  size: 14.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: AlignmentDirectional(
-                                                0.34, -0.91),
-                                            child: Container(
-                                              width: 28.0,
-                                              height: 28.0,
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFFE8B84D),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment:
-                                                AlignmentDirectional(0.7, -0.6),
-                                            child: Container(
-                                              width: 28.0,
-                                              height: 28.0,
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFF8A94A6),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2.0,
-                                                ),
-                                              ),
-                                              child: Align(
-                                                alignment: AlignmentDirectional(
-                                                    0.0, 0.0),
-                                                child: Icon(
-                                                  Icons.location_on_rounded,
-                                                  color: Colors.white,
-                                                  size: 14.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: AlignmentDirectional(
-                                                0.33, -0.85),
-                                            child: Icon(
-                                              Icons.location_on_rounded,
-                                              color: Colors.white,
-                                              size: 14.0,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        6.0, 8.0, 6.0, 0.0),
-                                    child: FFButtonWidget(
-                                      onPressed: () {
-                                        context.pushNamed('ConfirmBoarding');
-                                      },
-                                      text: 'Scan QR Code',
-                                      options: FFButtonOptions(
-                                        width: double.infinity,
-                                        height: 56.0,
-                                        padding: EdgeInsets.all(8.0),
-                                        iconPadding:
-                                            EdgeInsetsDirectional.fromSTEB(
-                                                0.0, 0.0, 0.0, 0.0),
-                                        color: Color(0xFF0C3451),
-                                        textStyle: FlutterFlowTheme.of(context)
-                                            .titleSmall
-                                            .override(
-                                              font: GoogleFonts.interTight(
-                                                fontWeight: FontWeight.bold,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
-                                              ),
-                                              color: Colors.white,
-                                              fontSize: 16.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight: FontWeight.bold,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
-                                            ),
-                                        elevation: 0.0,
-                                        borderSide: BorderSide(
-                                          color: Colors.transparent,
-                                          width: 0.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(14.0),
-                                      ),
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 48.0,
-                                        height: 2.0,
-                                        decoration: BoxDecoration(
-                                          color: FlutterFlowTheme.of(context)
-                                              .alternate,
-                                          borderRadius:
-                                              BorderRadius.circular(2.0),
-                                        ),
-                                      ),
-                                      Text(
-                                        'Or update status manually',
-                                        style: FlutterFlowTheme.of(context)
-                                            .labelMedium
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .labelMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .labelMedium
-                                                        .fontStyle,
-                                              ),
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .secondaryText,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                      Container(
-                                        width: 48.0,
-                                        height: 2.0,
-                                        decoration: BoxDecoration(
-                                          color: FlutterFlowTheme.of(context)
-                                              .alternate,
-                                          borderRadius:
-                                              BorderRadius.circular(2.0),
-                                        ),
-                                      ),
-                                    ].divide(SizedBox(width: 12.0)),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        6.0, 0.0, 6.0, 0.0),
-                                    child: FFButtonWidget(
-                                      onPressed: () {
-                                        var appState = context.read<MockState>();
-                                        appState.updateStudentStatus('s1', StudentStatus.onBusToHome);
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student simulated as boarded!')));
-                                      },
-                                      text: 'Confirm Manually ',
-                                      options: FFButtonOptions(
-                                        width: double.infinity,
-                                        height: 56.0,
-                                        padding: EdgeInsets.all(8.0),
-                                        iconPadding:
-                                            EdgeInsetsDirectional.fromSTEB(
-                                                0.0, 0.0, 0.0, 0.0),
-                                        color: Color(0xFFF7C530),
-                                        textStyle: FlutterFlowTheme.of(context)
-                                            .titleSmall
-                                            .override(
-                                              font: GoogleFonts.interTight(
-                                                fontWeight: FontWeight.bold,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF0C3451),
-                                              fontSize: 16.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight: FontWeight.bold,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
-                                            ),
-                                        elevation: 0.0,
-                                        borderSide: BorderSide(
-                                          color: Colors.transparent,
-                                          width: 0.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(14.0),
-                                      ),
-                                    ),
-                                  ),
-                                ]
-                                    .divide(SizedBox(height: 16.0))
-                                    .addToStart(SizedBox(height: 16.0))
-                                    .addToEnd(SizedBox(height: 100.0)),
-                              ),
-                            ),
-                          ]
-                              .divide(SizedBox(height: 16.0))
-                              .addToStart(SizedBox(height: 16.0))
-                              .addToEnd(SizedBox(height: 24.0)),
+              const SizedBox(height: 8),
+              _BusHeader(busName: 'Bus 12A · North Route'),
+              const SizedBox(height: 18),
+              _BusStatsRow(total: total, onBus: onBus, dropped: droppedOff),
+              const SizedBox(height: 16),
+              _TripProgressCard(progress: progress),
+              const SizedBox(height: 18),
+              _PrimaryCtaCard(
+                onPressed: () =>
+                    context.pushNamed(AssignedStudentslistWidget.routeName),
+              ),
+              const SizedBox(height: 22),
+              const _BusSectionTitle(title: 'Quick Actions'),
+              const SizedBox(height: 10),
+              _BusQuickActions(),
+            ],
+          ).animate().fade(duration: 500.ms).slideY(begin: 0.05, end: 0),
+        ),
+      ),
+    );
+  }
+}
+
+class _BusHeader extends StatelessWidget {
+  const _BusHeader({required this.busName});
+
+  final String busName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 12, 18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            GateFlowColors.brandPrimary,
+            GateFlowColors.brandPrimarySoft,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: GateFlowColors.brandPrimary.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'On Duty',
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Hello, Driver',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.directions_bus_rounded,
+                          color: GateFlowColors.brandAccent, size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        busName,
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _BusIconBtn(
+            icon: Icons.notifications_none_rounded,
+            onTap: () => context.pushNamed('BusNotifications'),
+          ),
+          const SizedBox(width: 8),
+          _BusIconBtn(
+            icon: Icons.person_outline_rounded,
+            onTap: () => context.pushNamed('BusDriverProfile'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BusIconBtn extends StatelessWidget {
+  const _BusIconBtn({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.18),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          width: 42,
+          height: 42,
+          child: Center(child: Icon(icon, color: Colors.white, size: 22)),
+        ),
+      ),
+    );
+  }
+}
+
+class _BusStatsRow extends StatelessWidget {
+  const _BusStatsRow({
+    required this.total,
+    required this.onBus,
+    required this.dropped,
+  });
+
+  final int total;
+  final int onBus;
+  final int dropped;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _BusStat(
+            label: 'Total',
+            value: total.toString(),
+            icon: Icons.people_alt_outlined,
+            color: GateFlowColors.brandPrimary,
+            tint: const Color(0xFFE8F0FE),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _BusStat(
+            label: 'On Bus',
+            value: onBus.toString(),
+            icon: Icons.airline_seat_recline_normal_outlined,
+            color: GateFlowColors.warning,
+            tint: const Color(0xFFFFF4E0),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _BusStat(
+            label: 'Dropped',
+            value: dropped.toString(),
+            icon: Icons.check_circle_outline_rounded,
+            color: GateFlowColors.success,
+            tint: const Color(0xFFE6F4EA),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BusStat extends StatelessWidget {
+  const _BusStat({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.tint,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: GateFlowColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: tint,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: GateFlowColors.textPrimary,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.5,
+              color: GateFlowColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripProgressCard extends StatelessWidget {
+  const _TripProgressCard({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = (progress.clamp(0.0, 1.0) * 100).round();
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: GateFlowColors.divider),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F0C3451),
+            blurRadius: 18,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Trip Progress',
+                style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: GateFlowColors.textPrimary,
+                ),
+              ),
+              Text(
+                '$pct% complete',
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  color: GateFlowColors.brandPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: GateFlowColors.surface,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                  GateFlowColors.brandPrimary),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _ProgressMeta(label: 'Started', value: '7:30 AM'),
+              _ProgressMeta(label: 'ETA', value: '8:45 AM'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressMeta extends StatelessWidget {
+  const _ProgressMeta({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          '$label: ',
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: GateFlowColors.textTertiary,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.outfit(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: GateFlowColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrimaryCtaCard extends StatelessWidget {
+  const _PrimaryCtaCard({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: GateFlowColors.divider),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      GateFlowColors.brandAccent,
+                      Color(0xFFFFE082),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.list_alt_rounded,
+                    color: GateFlowColors.brandPrimary, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'View Student List',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: GateFlowColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Update boarding & drop-off status',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        color: GateFlowColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: GateFlowColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BusSectionTitle extends StatelessWidget {
+  const _BusSectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: GoogleFonts.outfit(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: GateFlowColors.brandPrimary,
+      ),
+    );
+  }
+}
+
+class _BusQuickActions extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final actions = <_BusActionCard>[
+      _BusActionCard(
+        icon: Icons.qr_code_2_rounded,
+        title: 'Confirm Boarding',
+        subtitle: 'Scan student QR',
+        tint: const Color(0xFFE8F0FE),
+        iconColor: GateFlowColors.brandPrimary,
+        onTap: () => context.pushNamed('ConfirmBoarding'),
+      ),
+      _BusActionCard(
+        icon: Icons.list_alt_rounded,
+        title: 'Students',
+        subtitle: 'Assigned list',
+        tint: const Color(0xFFE6F4EA),
+        iconColor: GateFlowColors.success,
+        onTap: () =>
+            context.pushNamed(AssignedStudentslistWidget.routeName),
+      ),
+      _BusActionCard(
+        icon: Icons.notifications_active_outlined,
+        title: 'Notifications',
+        subtitle: 'School updates',
+        tint: const Color(0xFFFCE4EC),
+        iconColor: const Color(0xFFD81B60),
+        onTap: () => context.pushNamed('BusNotifications'),
+      ),
+      _BusActionCard(
+        icon: Icons.account_circle_outlined,
+        title: 'My Profile',
+        subtitle: 'Driver info',
+        tint: const Color(0xFFFFF4E0),
+        iconColor: GateFlowColors.warning,
+        onTap: () => context.pushNamed('BusDriverProfile'),
+      ),
+    ];
+
+    return GridView.builder(
+      itemCount: actions.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.45,
+      ),
+      itemBuilder: (_, i) => actions[i],
+    );
+  }
+}
+
+class _BusActionCard extends StatelessWidget {
+  const _BusActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.tint,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color tint;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: GateFlowColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: tint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: GateFlowColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5,
+                      color: GateFlowColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ],
-          ).animate().fade(duration: 500.ms).slideY(begin: 0.05, end: 0),
+          ),
         ),
       ),
     );

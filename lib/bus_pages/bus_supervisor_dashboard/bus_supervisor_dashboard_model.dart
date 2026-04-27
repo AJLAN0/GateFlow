@@ -1,12 +1,7 @@
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
-import 'bus_supervisor_dashboard_widget.dart' show BusSupervisorDashboardWidget;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+
+import '/flutter_flow/flutter_flow_util.dart';
+import 'bus_supervisor_dashboard_widget.dart' show BusSupervisorDashboardWidget;
 
 class BusSupervisorDashboardModel
     extends FlutterFlowModel<BusSupervisorDashboardWidget> {

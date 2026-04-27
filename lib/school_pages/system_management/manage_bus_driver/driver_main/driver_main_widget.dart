@@ -4,6 +4,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'driver_main_model.dart';
@@ -95,7 +96,10 @@ class _DriverMainWidgetState extends State<DriverMainWidget> {
               children: [
                 Padding(
                   padding: EdgeInsets.all(15.0),
-                  child: Container(
+                  child: InkWell(
+                    onTap: () => context.pushNamed('DriverManage'),
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: Container(
                     width: double.infinity,
                     height: 140.0,
                     decoration: BoxDecoration(
@@ -169,10 +173,14 @@ class _DriverMainWidgetState extends State<DriverMainWidget> {
                       ),
                     ),
                   ),
+                  ),
                 ),
                 Padding(
                   padding: EdgeInsets.all(15.0),
-                  child: Container(
+                  child: InkWell(
+                    onTap: () => context.pushNamed('BusManage'),
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: Container(
                     width: double.infinity,
                     height: 140.0,
                     decoration: BoxDecoration(
@@ -245,6 +253,7 @@ class _DriverMainWidgetState extends State<DriverMainWidget> {
                         ],
                       ),
                     ),
+                  ),
                   ),
                 ),
               ],

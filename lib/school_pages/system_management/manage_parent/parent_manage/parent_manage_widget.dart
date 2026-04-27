@@ -105,9 +105,7 @@ class _ParentManageWidgetState extends State<ParentManageWidget> {
                     color: Color(0xFFD3A624),
                     size: 40.0,
                   ),
-                  onPressed: () {
-                    print('IconButton pressed ...');
-                  },
+                  onPressed: () => context.pushNamed('ParentAdd'),
                 ),
               ),
               Padding(
@@ -219,7 +217,10 @@ class _ParentManageWidgetState extends State<ParentManageWidget> {
                     Padding(
                       padding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 12.0),
-                      child: Container(
+                      child: InkWell(
+                        onTap: () => context.pushNamed('ParentEdit'),
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Container(
                         width: double.infinity,
                         height: 90.0,
                         decoration: BoxDecoration(
@@ -327,6 +328,7 @@ class _ParentManageWidgetState extends State<ParentManageWidget> {
                             ],
                           ),
                         ),
+                      ),
                       ),
                     ),
                   ],

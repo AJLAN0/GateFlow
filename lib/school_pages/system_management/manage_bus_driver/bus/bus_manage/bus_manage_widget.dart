@@ -219,7 +219,10 @@ class _BusManageWidgetState extends State<BusManageWidget> {
                     Padding(
                       padding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 12.0),
-                      child: Container(
+                      child: InkWell(
+                        onTap: () => context.pushNamed('BusEdit'),
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Container(
                         width: double.infinity,
                         height: 90.0,
                         decoration: BoxDecoration(
@@ -327,6 +330,7 @@ class _BusManageWidgetState extends State<BusManageWidget> {
                             ],
                           ),
                         ),
+                      ),
                       ),
                     ),
                   ],

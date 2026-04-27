@@ -4,6 +4,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 's_mmain_model.dart';
@@ -96,7 +97,10 @@ class _SMmainWidgetState extends State<SMmainWidget> {
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.all(15.0),
-                    child: Container(
+                    child: InkWell(
+                      onTap: () => context.pushNamed('StudentManage'),
+                      borderRadius: BorderRadius.circular(16.0),
+                      child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Color(0xFFF1F4F8),
@@ -170,12 +174,16 @@ class _SMmainWidgetState extends State<SMmainWidget> {
                         ),
                       ),
                     ),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.all(15.0),
-                    child: Container(
+                    child: InkWell(
+                      onTap: () => context.pushNamed('ParentManage'),
+                      borderRadius: BorderRadius.circular(16.0),
+                      child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Color(0xFFF1F4F8),
@@ -249,12 +257,16 @@ class _SMmainWidgetState extends State<SMmainWidget> {
                         ),
                       ),
                     ),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.all(15.0),
-                    child: Container(
+                    child: InkWell(
+                      onTap: () => context.pushNamed('GuardiansM'),
+                      borderRadius: BorderRadius.circular(16.0),
+                      child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Color(0xFFF1F4F8),
@@ -328,12 +340,16 @@ class _SMmainWidgetState extends State<SMmainWidget> {
                         ),
                       ),
                     ),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.all(15.0),
-                    child: Container(
+                    child: InkWell(
+                      onTap: () => context.pushNamed('DriverMain'),
+                      borderRadius: BorderRadius.circular(16.0),
+                      child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Color(0xFFF1F4F8),
@@ -406,6 +422,7 @@ class _SMmainWidgetState extends State<SMmainWidget> {
                           ],
                         ),
                       ),
+                    ),
                     ),
                   ),
                 ),

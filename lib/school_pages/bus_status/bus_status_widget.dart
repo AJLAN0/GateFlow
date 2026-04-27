@@ -203,7 +203,10 @@ class _BusStatusWidgetState extends State<BusStatusWidget> {
                     Padding(
                       padding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 12.0),
-                      child: Container(
+                      child: InkWell(
+                        onTap: () => context.pushNamed('BusStatusView'),
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Container(
                         width: double.infinity,
                         height: 90.0,
                         decoration: BoxDecoration(
@@ -311,6 +314,7 @@ class _BusStatusWidgetState extends State<BusStatusWidget> {
                             ],
                           ),
                         ),
+                      ),
                       ),
                     ),
                   ],
