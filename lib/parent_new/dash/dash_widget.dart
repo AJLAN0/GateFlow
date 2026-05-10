@@ -67,12 +67,13 @@ class _DashWidgetState extends State<DashWidget> {
               _Header(pendingCount: pendingCount),
               const SizedBox(height: 18),
               _PrimaryCta(
-                onPressed: () => context.pushNamed('requestPicDro'),
+                onPressed: () =>
+                    context.pushNamed(SelectChildForRequestWidget.routeName),
               ),
               const SizedBox(height: 22),
-              const _SectionTitle(title: 'Quick Actions'),
+              const _SectionTitle(title: 'Family'),
               const SizedBox(height: 10),
-              _QuickActionsGrid(),
+              _AuthorizedUsersShortcut(),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -80,8 +81,11 @@ class _DashWidgetState extends State<DashWidget> {
                   const _SectionTitle(title: 'Latest Request'),
                   if (latestReq != null)
                     TextButton(
-                      onPressed: () =>
-                          context.pushNamed(RequestStatusWidget.routeName),
+                      onPressed: () => context.pushNamed(
+                        RequestStatusWidget.routeName,
+                        queryParameters:
+                            latestReq != null ? {'rid': latestReq.id} : {},
+                      ),
                       child: Text(
                         'See details',
                         style: GoogleFonts.inter(
@@ -94,7 +98,7 @@ class _DashWidgetState extends State<DashWidget> {
                 ],
               ),
               const SizedBox(height: 8),
-              _LatestRequestCard(request: latestReq),
+              _LatestRequestCard(request: latestReq, mockState: mockState),
             ],
           ).animate().fade(duration: 500.ms).slideY(begin: 0.05, end: 0),
         ),
@@ -306,7 +310,7 @@ class _PrimaryCta extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Start a pickup or drop-off request',
+                      'Choose a child, then complete pickup or dismissal',
                       style: GoogleFonts.inter(
                         fontSize: 12.5,
                         color: GateFlowColors.textSecondary,
@@ -343,124 +347,58 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _QuickActionsGrid extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final actions = <_QuickAction>[
-      _QuickAction(
-        icon: Icons.child_care_rounded,
-        title: 'View Children',
-        subtitle: 'Track & monitor',
-        tint: const Color(0xFFE8F0FE),
-        iconColor: GateFlowColors.brandPrimary,
-        onTap: () => context.pushNamed(ViewChildernWidget.routeName),
-      ),
-      _QuickAction(
-        icon: Icons.group_rounded,
-        title: 'Authorized Users',
-        subtitle: 'Manage guardians',
-        tint: const Color(0xFFE6F4EA),
-        iconColor: GateFlowColors.success,
-        onTap: () => context.pushNamed(ManageGuardiansWidget.routeName),
-      ),
-      _QuickAction(
-        icon: Icons.fact_check_outlined,
-        title: 'My Requests',
-        subtitle: 'View status',
-        tint: const Color(0xFFFFF4E0),
-        iconColor: GateFlowColors.warning,
-        onTap: () => context.pushNamed(RequestStatusWidget.routeName),
-      ),
-      _QuickAction(
-        icon: Icons.notifications_active_outlined,
-        title: 'Notifications',
-        subtitle: 'School updates',
-        tint: const Color(0xFFFCE4EC),
-        iconColor: const Color(0xFFD81B60),
-        onTap: () => context.pushNamed('ParentNotifications'),
-      ),
-    ];
-
-    return GridView.builder(
-      itemCount: actions.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.45,
-      ),
-      itemBuilder: (_, i) => actions[i],
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.tint,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color tint;
-  final Color iconColor;
-  final VoidCallback onTap;
-
+class _AuthorizedUsersShortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
+        onTap: () => context.pushNamed(ManageGuardiansWidget.routeName),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: GateFlowColors.divider),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: tint,
+                  color: const Color(0xFFE6F4EA),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
+                child: const Icon(Icons.group_rounded,
+                    color: GateFlowColors.success, size: 24),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: GateFlowColors.textPrimary,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Authorized guardians',
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: GateFlowColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 11.5,
-                      color: GateFlowColors.textSecondary,
+                    Text(
+                      'Invite or review who can pick up your children',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        color: GateFlowColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: GateFlowColors.textTertiary),
             ],
           ),
         ),
@@ -470,9 +408,10 @@ class _QuickAction extends StatelessWidget {
 }
 
 class _LatestRequestCard extends StatelessWidget {
-  const _LatestRequestCard({required this.request});
+  const _LatestRequestCard({required this.request, required this.mockState});
 
   final ParentRequest? request;
+  final MockState mockState;
 
   @override
   Widget build(BuildContext context) {
@@ -499,7 +438,7 @@ class _LatestRequestCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'No requests yet. Tap "New Request" to get started.',
+                'No requests yet. Use New Request after selecting your child.',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: GateFlowColors.textSecondary,
@@ -512,13 +451,15 @@ class _LatestRequestCard extends StatelessWidget {
     }
 
     final r = request!;
+    final qp = {'rid': r.id};
     final tone = _toneFor(r.status);
 
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        onTap: () => context.pushNamed(RequestStatusWidget.routeName),
+        onTap: () =>
+            context.pushNamed(RequestStatusWidget.routeName, queryParameters: qp),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(18),
@@ -544,10 +485,16 @@ class _LatestRequestCard extends StatelessWidget {
                       color: const Color(0xFFE8F0FE),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.directions_bus_rounded,
-                        color: GateFlowColors.brandPrimary),
+                    child: Icon(
+                      r.type.toLowerCase().contains('car') ||
+                              mockState.demoChild(r.studentId)?.transport ==
+                                  DemoChildTransport.car
+                          ? Icons.directions_car_rounded
+                          : Icons.directions_bus_rounded,
+                      color: GateFlowColors.brandPrimary,
+                      size: 22,
+                    ),
                   ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,12 +553,18 @@ class _LatestRequestCard extends StatelessWidget {
               const SizedBox(height: 14),
               const Divider(height: 1, color: GateFlowColors.divider),
               const SizedBox(height: 14),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _MetaItem(label: 'Pickup Time', value: '3:30 PM'),
-                  _MetaItem(label: 'Guardian', value: 'Deem Ahmed'),
-                  _MetaItem(label: 'Child', value: 'Omar'),
+                  _MetaItem(
+                      label: 'Pickup Time',
+                      value: r.timeLabel ?? '—'),
+                  _MetaItem(
+                      label: 'Pickup person',
+                      value: r.pickupPersonSummary ?? '—'),
+                  _MetaItem(
+                      label: 'Child',
+                      value: mockState.demoChildName(r.studentId)),
                 ],
               ),
             ],

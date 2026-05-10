@@ -6,12 +6,8 @@ import 'gateflow_colors.dart';
 /// Transport mode for a tracked child.
 enum ChildTransport { bus, car }
 
-/// Modern, reusable child tracking card used on parent / guardian
-/// "View Children" screens.
-///
-/// Replaces ~250 lines of duplicated boilerplate per card with a single
-/// component that handles avatar, transport label, attendance chips, and
-/// tap-to-details navigation in a consistent, modern layout.
+/// Child tracking row: tap header for transport detail; footer switch for
+/// “Absent today” independent of navigation.
 class ChildCard extends StatelessWidget {
   const ChildCard({
     super.key,
@@ -20,9 +16,10 @@ class ChildCard extends StatelessWidget {
     required this.transport,
     required this.emoji,
     required this.avatarTint,
-    required this.attendancePresent,
-    required this.onAttendanceChanged,
+    required this.absentToday,
+    required this.onAbsentTodayChanged,
     required this.onTap,
+    this.allowAbsentToggle = true,
   });
 
   final String name;
@@ -30,9 +27,10 @@ class ChildCard extends StatelessWidget {
   final ChildTransport transport;
   final String emoji;
   final Color avatarTint;
-  final bool attendancePresent;
-  final ValueChanged<bool> onAttendanceChanged;
+  final bool absentToday;
+  final ValueChanged<bool> onAbsentTodayChanged;
   final VoidCallback onTap;
+  final bool allowAbsentToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +53,17 @@ class ChildCard extends StatelessWidget {
         ],
         border: Border.all(color: GateFlowColors.divider),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Row(
                   children: [
                     _Avatar(emoji: emoji, tint: avatarTint),
                     const SizedBox(width: 14),
@@ -107,29 +105,45 @@ class ChildCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: GateFlowColors.divider),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Attendance',
-                      style: GoogleFonts.inter(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: GateFlowColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: GateFlowColors.divider),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Transport attendance',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: GateFlowColors.textSecondary,
+                        ),
                       ),
-                    ),
-                    _AttendanceToggle(
-                      present: attendancePresent,
-                      onChanged: onAttendanceChanged,
-                    ),
-                  ],
+                      Text(
+                        'Absent today',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: GateFlowColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(
+                  value: absentToday,
+                  activeColor: GateFlowColors.danger,
+                  onChanged: allowAbsentToggle ? onAbsentTodayChanged : null,
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -190,85 +204,6 @@ class _TransportBadge extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AttendanceToggle extends StatelessWidget {
-  const _AttendanceToggle({
-    required this.present,
-    required this.onChanged,
-  });
-
-  final bool present;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: GateFlowColors.surface,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Chip(
-            label: 'Present',
-            selected: present,
-            color: GateFlowColors.success,
-            onTap: () => onChanged(true),
-          ),
-          _Chip(
-            label: 'Absent',
-            selected: !present,
-            color: GateFlowColors.danger,
-            onTap: () => onChanged(false),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? color : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : GateFlowColors.textSecondary,
-            ),
-          ),
-        ),
       ),
     );
   }

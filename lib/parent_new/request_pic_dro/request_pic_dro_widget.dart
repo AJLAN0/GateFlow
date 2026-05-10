@@ -10,6 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../data/mock_state.dart';
 import 'request_pic_dro_model.dart';
 export 'request_pic_dro_model.dart';
 
@@ -59,8 +62,19 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
     super.dispose();
   }
 
+  DemoParentChild _pickedChild(BuildContext context) {
+    final cid = GoRouterState.of(context).uri.queryParameters['cid'];
+    final m = context.read<MockState>();
+    if (cid != null) {
+      final c = m.demoChild(cid);
+      if (c != null) return c;
+    }
+    return m.parentDemoChildren.first;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final picked = _pickedChild(context);
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -201,7 +215,7 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Sara Khaled',
+                                          picked.name,
                                           style: FlutterFlowTheme.of(context)
                                               .titleMedium
                                               .override(
@@ -254,7 +268,7 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                                   4.0,
                                                                   0.0),
                                                       child: Text(
-                                                        'Grade 5 ',
+                                                        '${picked.grade} ',
                                                         style: FlutterFlowTheme
                                                                 .of(context)
                                                             .labelSmall
@@ -1241,9 +1255,28 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 0.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () async {
-                            context
-                                .pushNamed(RequestSuccessfulWidget.routeName);
+                          onPressed: () {
+                            final m = context.read<MockState>();
+                            final cid = GoRouterState.of(context)
+                                    .uri
+                                    .queryParameters['cid'] ??
+                                picked.id;
+                            final req = m.submitNewParentRequest(
+                              studentId: cid,
+                              type: _model.dropDownValue1 ??
+                                  'Early Pickup · mock',
+                              timeLabel:
+                                  _model.dropDownValue2 ?? '2:30 PM (mock)',
+                              pickupPersonSummary: (_model.textController
+                                              ?.text
+                                              .trim()
+                                              .isNotEmpty ==
+                                          true)
+                                      ? _model.textController!.text
+                                      : 'Parent / guardian pickup (mock)',
+                            );
+                            context.pushNamed(RequestSuccessfulWidget.routeName,
+                                queryParameters: {'rid': req.id});
                           },
                           text: 'Submit Request',
                           options: FFButtonOptions(

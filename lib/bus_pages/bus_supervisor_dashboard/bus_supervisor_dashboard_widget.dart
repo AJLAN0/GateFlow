@@ -47,6 +47,12 @@ class _BusSupervisorDashboardWidgetState
   @override
   Widget build(BuildContext context) {
     final mockState = context.watch<MockState>();
+    final bus =
+        mockState.buses.isNotEmpty ? mockState.buses.first : null;
+    final busTitle = bus == null
+        ? 'GateFlow Bus'
+        : '${bus.name} · ${bus.routeLabel}';
+
     final onBus = mockState.students
         .where((s) =>
             s.status == StudentStatus.onBusToHome ||
@@ -71,18 +77,18 @@ class _BusSupervisorDashboardWidgetState
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
             children: [
               const SizedBox(height: 8),
-              _BusHeader(busName: 'Bus 12A · North Route'),
+              _BusHeader(
+                busLabel: busTitle,
+                driverName: bus?.driverName ?? 'Driver',
+              ),
               const SizedBox(height: 18),
               _BusStatsRow(total: total, onBus: onBus, dropped: droppedOff),
               const SizedBox(height: 16),
-              _TripProgressCard(progress: progress),
-              const SizedBox(height: 18),
-              _PrimaryCtaCard(
-                onPressed: () =>
-                    context.pushNamed(AssignedStudentslistWidget.routeName),
-              ),
+              _RoutePreviewCard(bus: bus, completionPct: progress),
+              const SizedBox(height: 14),
+              _DriverPrimaryActions(),
               const SizedBox(height: 22),
-              const _BusSectionTitle(title: 'Quick Actions'),
+              const _BusSectionTitle(title: 'Operational shortcuts'),
               const SizedBox(height: 10),
               _BusQuickActions(),
             ],
@@ -94,12 +100,15 @@ class _BusSupervisorDashboardWidgetState
 }
 
 class _BusHeader extends StatelessWidget {
-  const _BusHeader({required this.busName});
+  const _BusHeader({required this.busLabel, required this.driverName});
 
-  final String busName;
+  final String busLabel;
+  final String driverName;
 
   @override
   Widget build(BuildContext context) {
+    final greetingName =
+        driverName.contains('You') ? 'Driver' : driverName.split(' ').first;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 12, 18),
       decoration: BoxDecoration(
@@ -136,7 +145,7 @@ class _BusHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Hello, Driver',
+                  'Hello, $greetingName',
                   style: GoogleFonts.outfit(
                     color: Colors.white,
                     fontSize: 22,
@@ -158,7 +167,7 @@ class _BusHeader extends StatelessWidget {
                           color: GateFlowColors.brandAccent, size: 14),
                       const SizedBox(width: 6),
                       Text(
-                        busName,
+                        busLabel,
                         style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 11.5,
@@ -173,12 +182,14 @@ class _BusHeader extends StatelessWidget {
           ),
           _BusIconBtn(
             icon: Icons.notifications_none_rounded,
-            onTap: () => context.pushNamed('BusNotifications'),
+            onTap: () =>
+                context.pushNamed(BusNotificationsWidget.routeName),
           ),
           const SizedBox(width: 8),
           _BusIconBtn(
             icon: Icons.person_outline_rounded,
-            onTap: () => context.pushNamed('BusDriverProfile'),
+            onTap: () =>
+                context.pushNamed(BusDriverProfileWidget.routeName),
           ),
         ],
       ),
@@ -322,14 +333,15 @@ class _BusStat extends StatelessWidget {
   }
 }
 
-class _TripProgressCard extends StatelessWidget {
-  const _TripProgressCard({required this.progress});
+class _RoutePreviewCard extends StatelessWidget {
+  const _RoutePreviewCard({required this.bus, required this.completionPct});
 
-  final double progress;
+  final Bus? bus;
+  final double completionPct;
 
   @override
   Widget build(BuildContext context) {
-    final pct = (progress.clamp(0.0, 1.0) * 100).round();
+    final pct = (completionPct.clamp(0.0, 1.0) * 100).round();
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -351,7 +363,7 @@ class _TripProgressCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Trip Progress',
+                'Route path (mock)',
                 style: GoogleFonts.outfit(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -359,7 +371,7 @@ class _TripProgressCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '$pct% complete',
+                '$pct% drop-offs',
                 style: GoogleFonts.inter(
                   fontSize: 12.5,
                   color: GateFlowColors.brandPrimary,
@@ -369,23 +381,71 @@ class _TripProgressCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-              minHeight: 8,
-              backgroundColor: GateFlowColors.surface,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                  GateFlowColors.brandPrimary),
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  GateFlowColors.surface,
+                  GateFlowColors.brandPrimary.withValues(alpha: .08),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: GateFlowColors.divider),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  _RouteStop(label: 'School', sub: 'Depart 2:40', active: false),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: SizedBox(
+                        height: 4,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            gradient: LinearGradient(
+                              colors: [
+                                GateFlowColors.brandPrimary,
+                                GateFlowColors.brandAccent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _RouteStop(label: 'North A', sub: 'Stop 3', active: true),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: SizedBox(
+                        height: 4,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: GateFlowColors.divider,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _RouteStop(label: 'Zone D', sub: 'Terminus', active: false),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _ProgressMeta(label: 'Started', value: '7:30 AM'),
-              _ProgressMeta(label: 'ETA', value: '8:45 AM'),
-            ],
+          Text(
+            bus?.lastUpdateLabel ?? 'Last ping: just now (mock)',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: GateFlowColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -393,102 +453,107 @@ class _TripProgressCard extends StatelessWidget {
   }
 }
 
-class _ProgressMeta extends StatelessWidget {
-  const _ProgressMeta({required this.label, required this.value});
+class _RouteStop extends StatelessWidget {
+  const _RouteStop({
+    required this.label,
+    required this.sub,
+    required this.active,
+  });
 
   final String label;
-  final String value;
+  final String sub;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          '$label: ',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: GateFlowColors.textTertiary,
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color:
+                active ? GateFlowColors.brandPrimary : GateFlowColors.divider,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: const [
+              BoxShadow(color: Color(0x14000000), blurRadius: 4),
+            ],
           ),
         ),
+        const SizedBox(height: 6),
         Text(
-          value,
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
             color: GateFlowColors.textPrimary,
           ),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          sub,
+          style: GoogleFonts.inter(
+            fontSize: 9.5,
+            color: GateFlowColors.textTertiary,
+          ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 }
 
-class _PrimaryCtaCard extends StatelessWidget {
-  const _PrimaryCtaCard({required this.onPressed});
-
-  final VoidCallback onPressed;
-
+class _DriverPrimaryActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: GateFlowColors.divider),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      GateFlowColors.brandAccent,
-                      Color(0xFFFFE082),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.list_alt_rounded,
-                    color: GateFlowColors.brandPrimary, size: 24),
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GateFlowColors.brandPrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'View Student List',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: GateFlowColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Update boarding & drop-off status',
-                      style: GoogleFonts.inter(
-                        fontSize: 12.5,
-                        color: GateFlowColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GateFlowColors.textTertiary),
-            ],
+              elevation: 0,
+            ),
+            onPressed: () =>
+                context.pushNamed(ConfirmBoardingWidget.routeName),
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            label: Text(
+              'Scan student',
+              style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w800, fontSize: 15.5),
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GateFlowColors.brandPrimary,
+              side: BorderSide(color: GateFlowColors.divider),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+            ),
+            onPressed: () =>
+                context.pushNamed(AssignedStudentslistWidget.routeName),
+            icon: const Icon(Icons.groups_outlined),
+            label: Text(
+              'View student list',
+              style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -516,37 +581,21 @@ class _BusQuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = <_BusActionCard>[
       _BusActionCard(
-        icon: Icons.qr_code_2_rounded,
-        title: 'Confirm Boarding',
-        subtitle: 'Scan student QR',
-        tint: const Color(0xFFE8F0FE),
-        iconColor: GateFlowColors.brandPrimary,
-        onTap: () => context.pushNamed('ConfirmBoarding'),
-      ),
-      _BusActionCard(
-        icon: Icons.list_alt_rounded,
-        title: 'Students',
-        subtitle: 'Assigned list',
-        tint: const Color(0xFFE6F4EA),
-        iconColor: GateFlowColors.success,
-        onTap: () =>
-            context.pushNamed(AssignedStudentslistWidget.routeName),
-      ),
-      _BusActionCard(
         icon: Icons.notifications_active_outlined,
-        title: 'Notifications',
-        subtitle: 'School updates',
-        tint: const Color(0xFFFCE4EC),
-        iconColor: const Color(0xFFD81B60),
-        onTap: () => context.pushNamed('BusNotifications'),
-      ),
-      _BusActionCard(
-        icon: Icons.account_circle_outlined,
-        title: 'My Profile',
-        subtitle: 'Driver info',
+        title: 'School alerts',
+        subtitle: 'Dispatch & reminders',
         tint: const Color(0xFFFFF4E0),
         iconColor: GateFlowColors.warning,
-        onTap: () => context.pushNamed('BusDriverProfile'),
+        onTap: () =>
+            context.pushNamed(BusNotificationsWidget.routeName),
+      ),
+      _BusActionCard(
+        icon: Icons.route_rounded,
+        title: 'Bus status summary',
+        subtitle: 'Line health (mock)',
+        tint: const Color(0xFFE8F0FE),
+        iconColor: GateFlowColors.brandPrimary,
+        onTap: () => context.pushNamed(BusStatusViewWidget.routeName),
       ),
     ];
 

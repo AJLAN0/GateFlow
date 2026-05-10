@@ -308,6 +308,16 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => StudentStatusViewBusCarWidget(),
         ),
         FFRoute(
+          name: ParentRequestsListWidget.routeName,
+          path: ParentRequestsListWidget.routePath,
+          builder: (context, params) => ParentRequestsListWidget(),
+        ),
+        FFRoute(
+          name: SelectChildForRequestWidget.routeName,
+          path: SelectChildForRequestWidget.routePath,
+          builder: (context, params) => SelectChildForRequestWidget(),
+        ),
+        FFRoute(
           name: RequestStatusWidget.routeName,
           path: RequestStatusWidget.routePath,
           builder: (context, params) => RequestStatusWidget(),

@@ -1,15 +1,19 @@
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../shared/role_bottom_nav.dart';
+
+import '/flutter_flow/flutter_flow_util.dart';
+import '../../data/mock_state.dart';
+import '../../shared/gateflow_colors.dart';
 import 'request_status_model.dart';
+
 export 'request_status_model.dart';
 
+/// Request **detail** timeline (push only — no BottomNavigationBar).
+///
+/// Open with `queryParameters['rid']` from [ParentRequestsListWidget].
+/// If `rid` is missing, falls back to the most recent mock request.
 class RequestStatusWidget extends StatefulWidget {
   const RequestStatusWidget({super.key});
 
@@ -23,8 +27,6 @@ class RequestStatusWidget extends StatefulWidget {
 class _RequestStatusWidgetState extends State<RequestStatusWidget> {
   late RequestStatusModel _model;
 
-  final scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -34,817 +36,312 @@ class _RequestStatusWidgetState extends State<RequestStatusWidget> {
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  ParentRequest? _resolve(MockState m, String? rid) {
+    if (rid != null && rid.isNotEmpty) {
+      try {
+        return m.requests.firstWhere((r) => r.id == rid);
+      } catch (_) {}
+    }
+    return m.requests.isNotEmpty ? m.requests.last : null;
   }
 
   @override
   Widget build(BuildContext context) {
+    final rid = GoRouterState.of(context).uri.queryParameters['rid'];
+    final mock = context.watch<MockState>();
+    final req = _resolve(mock, rid);
+
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        key: scaffoldKey,
-        bottomNavigationBar: RoleBottomNav(current: 'requests'),
-        backgroundColor: Color(0xFFF5F7FA),
+        backgroundColor: GateFlowColors.surface,
         appBar: AppBar(
-          backgroundColor: Color(0xFF0C3451),
-          automaticallyImplyLeading: false,
-          leading: FlutterFlowIconButton(
-            borderColor: Colors.transparent,
-            borderRadius: 30.0,
-            borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 30.0,
-            ),
-            onPressed: () async {
-              context.safePop();
-            },
+          backgroundColor: GateFlowColors.brandPrimary,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            onPressed: () => context.safePop(),
           ),
           title: Text(
-            'Request Status ',
-            style: FlutterFlowTheme.of(context).titleLarge.override(
-                  font: GoogleFonts.outfit(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                  fontSize: 24.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                  fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                ),
+            'Request details',
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 20),
           ),
-          actions: [],
-          centerTitle: false,
-          elevation: 2.0,
         ),
-        body: SafeArea(
-          top: true,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 12.0,
-                          color: Color(0x1A000000),
-                          offset: Offset(
-                            0.0,
-                            4.0,
-                          ),
-                        )
-                      ],
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'EARLY PICKUP REQUEST',
-                                      style: FlutterFlowTheme.of(context)
-                                          .labelSmall
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelSmall
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF7B8FA6),
-                                            fontSize: 11.0,
-                                            letterSpacing: 1.0,
-                                            fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .labelSmall
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 4.0, 0.0, 0.0),
-                                      child: Text(
-                                        'Sara khaled',
-                                        style: FlutterFlowTheme.of(context)
-                                            .headlineMedium
-                                            .override(
-                                              font: GoogleFonts.interTight(
-                                                fontWeight: FontWeight.bold,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .headlineMedium
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF1A1A2E),
-                                              fontSize: 22.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight: FontWeight.bold,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .headlineMedium
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 2.0, 0.0, 0.0),
-                                      child: Text(
-                                        'Grade 3 ',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF7B8FA6),
-                                              fontSize: 14.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 4.0, 0.0, 0.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF0F4FF),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        10.0, 6.0, 10.0, 6.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.schedule_rounded,
-                                          color: Color(0xFF0C3451),
-                                          size: 14.0,
-                                        ),
-                                        Padding(
-                                          padding:
-                                              EdgeInsetsDirectional.fromSTEB(
-                                                  4.0, 0.0, 4.0, 0.0),
-                                          child: Text(
-                                            '2:15 PM',
-                                            style: FlutterFlowTheme.of(context)
-                                                .labelSmall
-                                                .override(
-                                                  font: GoogleFonts.inter(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontStyle:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .labelSmall
-                                                            .fontStyle,
-                                                  ),
-                                                  color: Color(0xFF0C3451),
-                                                  fontSize: 13.0,
-                                                  letterSpacing: 0.0,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .labelSmall
-                                                          .fontStyle,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Divider(
-                            height: 24.0,
-                            thickness: 1.0,
-                            color: Color(0xFFF0F2F5),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              Container(
-                                width: 44.0,
-                                height: 44.0,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFFF0F4FF),
-                                  borderRadius: BorderRadius.circular(22.0),
-                                ),
-                                child: Align(
-                                  alignment: AlignmentDirectional(0.0, 0.0),
-                                  child: Icon(
-                                    Icons.person_rounded,
-                                    color: Color(0xFF0C3451),
-                                    size: 22.0,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Authorized Pickup Person',
-                                      style: FlutterFlowTheme.of(context)
-                                          .labelSmall
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelSmall
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF7B8FA6),
-                                            fontSize: 12.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .labelSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .labelSmall
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 2.0, 0.0, 0.0),
-                                      child: Text(
-                                        'Haifa Ali (mother)',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF1A1A2E),
-                                              fontSize: 15.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 12.0)),
-                          ),
-                          Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                0.0, 12.0, 0.0, 0.0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                Container(
-                                  width: 44.0,
-                                  height: 44.0,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF0F4FF),
-                                    borderRadius: BorderRadius.circular(22.0),
-                                  ),
-                                  child: Align(
-                                    alignment: AlignmentDirectional(0.0, 0.0),
-                                    child: Icon(
-                                      Icons.calendar_today_rounded,
-                                      color: Color(0xFF0C3451),
-                                      size: 22.0,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.max,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Request Submitted',
-                                        style: FlutterFlowTheme.of(context)
-                                            .labelSmall
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .labelSmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .labelSmall
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF7B8FA6),
-                                              fontSize: 12.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .labelSmall
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsetsDirectional.fromSTEB(
-                                            0.0, 2.0, 0.0, 0.0),
-                                        child: Text(
-                                          'Today, March 15 · 9:42 AM',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color: Color(0xFF1A1A2E),
-                                                fontSize: 15.0,
-                                                letterSpacing: 0.0,
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ].divide(SizedBox(width: 12.0)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+        body: req == null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No request data (mock). Submit a request first.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                        fontSize: 14, color: GateFlowColors.textSecondary),
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 12.0,
-                          color: Color(0x1A000000),
-                          offset: Offset(
-                            0.0,
-                            4.0,
-                          ),
-                        )
-                      ],
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                0.0, 0.0, 0.0, 20.0),
-                            child: Text(
-                              'Request Status ',
-                              style: FlutterFlowTheme.of(context)
-                                  .titleMedium
-                                  .override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FontWeight.bold,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Color(0xFF1A1A2E),
-                                    fontSize: 16.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.bold,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleMedium
-                                        .fontStyle,
-                                  ),
-                            ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 36.0,
-                                    height: 36.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF0C3451),
-                                      borderRadius: BorderRadius.circular(18.0),
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.check_rounded,
-                                        color: Colors.white,
-                                        size: 18.0,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 2.0,
-                                    height: 30.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF0C3451),
-                                      borderRadius: BorderRadius.circular(2.0),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Request Submitted',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF1A1A2E),
-                                            fontSize: 15.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          10.0, 5.0, 20.0, 0.0),
-                                      child: Text(
-                                        'Your early request was sent to the school.',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF7B8FA6),
-                                              fontSize: 13.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 36.0,
-                                    height: 36.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFFFC107),
-                                      borderRadius: BorderRadius.circular(18.0),
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.access_time_filled_sharp,
-                                        color: Colors.white,
-                                        size: 18.0,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 2.0,
-                                    height: 20.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFE0E0E0),
-                                      borderRadius: BorderRadius.circular(2.0),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Awaiting Approval',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF1A1A2E),
-                                            fontSize: 15.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          10.0, 5.0, 20.0, 0.0),
-                                      child: Text(
-                                        'Pending decision from school admin.',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFF7B8FA6),
-                                              fontSize: 13.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 36.0,
-                                    height: 36.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFE8EAF0),
-                                      borderRadius: BorderRadius.circular(18.0),
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.check_circle_outline_rounded,
-                                        color: Color(0xFFB0B8C8),
-                                        size: 18.0,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Approved By School ',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFFB0B8C8),
-                                            fontSize: 15.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 2.0, 0.0, 0.0),
-                                      child: Text(
-                                        'Your request has been approved ',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
-                                              ),
-                                              color: Color(0xFFB0B8C8),
-                                              fontSize: 13.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      EdgeInsetsDirectional.fromSTEB(22.0, 10.0, 22.0, 0.0),
-                  child: FFButtonWidget(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Request cancelled successfully'),
-                          backgroundColor: Color(0xFF0C3451),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              )
+            : SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SummaryCard(mock: mock, r: req),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Timeline',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: GateFlowColors.brandPrimary,
                         ),
-                      );
-                      context.safePop();
-                    },
-                    text: 'Cancel Request',
-                    options: FFButtonOptions(
-                      width: double.infinity,
-                      height: 56.0,
-                      padding: EdgeInsets.all(8.0),
-                      iconPadding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                      color: Color(0xFCCAD5E1),
-                      textStyle:
-                          FlutterFlowTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.interTight(
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Color(0xFF0C3451),
-                                fontSize: 16.0,
-                                letterSpacing: 0.0,
-                                fontWeight: FontWeight.bold,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
-                              ),
-                      elevation: 0.0,
-                      borderSide: BorderSide(
-                        color: Colors.transparent,
-                        width: 0.0,
                       ),
-                      borderRadius: BorderRadius.circular(14.0),
-                    ),
+                      const SizedBox(height: 10),
+                      _Timeline(
+                        r: req,
+                        released: mock.releasedPickupRequestIds.contains(req.id),
+                      ),
+                    ],
                   ),
                 ),
-              ]
-                  .divide(SizedBox(height: 16.0))
-                  .addToStart(SizedBox(height: 16.0))
-                  .addToEnd(SizedBox(height: 32.0)),
+              ),
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.mock, required this.r});
+
+  final MockState mock;
+  final ParentRequest r;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = mock.demoChildName(r.studentId);
+    final grade = mock.demoChild(r.studentId)?.grade ?? '—';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: GateFlowColors.divider),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 18,
+            offset: Offset(0, 6),
+            color: Color(0x0F0C3451),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            r.type.toUpperCase(),
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: GateFlowColors.textTertiary,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            name,
+            style: GoogleFonts.outfit(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: GateFlowColors.textPrimary,
+            ),
+          ),
+          Text(
+            grade,
+            style: GoogleFonts.inter(
+                fontSize: 13, color: GateFlowColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniChip(label: 'Time', value: r.timeLabel ?? '—'),
+              _MiniChip(
+                  label: 'Pickup', value: r.pickupPersonSummary ?? '—'),
+              _MiniChip(label: 'Status', value: r.status.name),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniChip extends StatelessWidget {
+  const _MiniChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: GateFlowColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: GateFlowColors.divider),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: GoogleFonts.inter(
+              fontSize: 12, color: GateFlowColors.textSecondary),
+          children: [
+            TextSpan(
+                text: '$label: ',
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            TextSpan(
+                text: value,
+                style: TextStyle(color: GateFlowColors.textPrimary)),
+          ],
         ),
       ),
     );
   }
+}
+
+class _Timeline extends StatelessWidget {
+  const _Timeline({required this.r, required this.released});
+
+  final ParentRequest r;
+  final bool released;
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = <_TStep>[
+      _TStep(
+        title: 'Submitted',
+        subtitle: 'You sent the request',
+        done: true,
+      ),
+      _TStep(
+        title: 'School review',
+        subtitle: r.status == RequestStatus.pending
+            ? 'Awaiting staff review'
+            : 'Staff processed your request',
+        done: r.status != RequestStatus.pending,
+        highlight: r.status == RequestStatus.pending,
+      ),
+      _TStep(
+        title: 'Decision',
+        subtitle: r.status == RequestStatus.approved
+            ? 'Approved for your pickup window'
+            : r.status == RequestStatus.rejected
+                ? 'Not approved · contact the school desk'
+                : 'Pending decision',
+        done: r.status == RequestStatus.approved ||
+            r.status == RequestStatus.rejected,
+        warning: r.status == RequestStatus.rejected,
+      ),
+      _TStep(
+        title: 'Gate release',
+        subtitle: released
+            ? 'Student released · request completed'
+            : (r.status == RequestStatus.approved
+                ? 'Waiting for pickup verification'
+                : '—'),
+        done: released,
+      ),
+    ];
+
+    return Column(
+      children: steps.asMap().entries.map((e) {
+        final i = e.key;
+        final s = e.value;
+        final last = i == steps.length - 1;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: s.done
+                        ? GateFlowColors.success
+                        : GateFlowColors.divider,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: s.done
+                      ? const Icon(Icons.check, color: Colors.white, size: 14)
+                      : null,
+                ),
+                if (!last)
+                  Container(
+                      width: 2,
+                      height: 48,
+                      color: GateFlowColors.divider),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: s.warning
+                        ? GateFlowColors.rejected.withValues(alpha: 0.06)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: GateFlowColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.title,
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        s.subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: GateFlowColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _TStep {
+  _TStep({
+    required this.title,
+    required this.subtitle,
+    required this.done,
+    this.highlight = false,
+    this.warning = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool done;
+  final bool highlight;
+  final bool warning;
 }

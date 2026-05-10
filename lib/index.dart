@@ -52,6 +52,10 @@ export '/school_pages/system_management/manage_bus_driver/bus/bus_add/bus_add_wi
     show BusAddWidget;
 export '/parent_new/request_pic_dro/request_pic_dro_widget.dart'
     show RequestPicDroWidget;
+export '/parent_new/parent_requests_list/parent_requests_list_widget.dart'
+    show ParentRequestsListWidget;
+export '/parent_new/select_child_for_request/select_child_for_request_widget.dart'
+    show SelectChildForRequestWidget;
 export '/parent_new/add_guardian/add_guardian_widget.dart'
     show AddGuardianWidget;
 export '/school_pages/system_management/manage_bus_driver/bus/bus_manage/bus_manage_widget.dart'

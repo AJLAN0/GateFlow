@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
+import '../../data/mock_state.dart';
 import 'add_guardian_model.dart';
 export 'add_guardian_model.dart';
 
@@ -975,7 +977,37 @@ class _AddGuardianWidgetState extends State<AddGuardianWidget> {
                           EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                       child: FFButtonWidget(
                         onPressed: () {
-                          print('Button pressed ...');
+                          final m = context.read<MockState>();
+                          final name =
+                              _model.textController1?.text.trim().isNotEmpty ==
+                                      true
+                                  ? _model.textController1!.text.trim()
+                                  : 'New guardian';
+                          final phone =
+                              _model.textController2?.text.trim() ?? '—';
+                          final relation =
+                              _model.textController4?.text.trim() ??
+                                  (_model.dropDownValue ?? 'Authorized adult');
+                          m.submitPendingGuardianInvite(
+                            PendingGuardianInvite(
+                              id: 'g_${DateTime.now().millisecondsSinceEpoch}',
+                              fullName: name,
+                              phone: phone,
+                              relationship: relation,
+                              forChildrenSummary:
+                                  'Applies to tracked children (mock)',
+                              status: GuardianInviteStatus.pending,
+                            ),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Request sent — pending school approval (mock).',
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          context.safePop();
                         },
                         text: 'Submit Guardian request ',
                         options: FFButtonOptions(

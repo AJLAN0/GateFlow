@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '/flutter_flow/flutter_flow_util.dart';
+import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
 import '../../shared/role_bottom_nav.dart';
+import '../time_request_d/time_request_d_widget.dart';
 import 'time_request_model.dart';
 
 export 'time_request_model.dart';
 
-/// School staff time-request review page.
-///
-/// Modernized: brand app bar, segmented tab control, live search,
-/// reusable request rows, status pills, and clear empty states.
-/// Each row is tappable and routes to the request detail screen.
+/// School staff early/late list (root for Requests tab).
 class TimeRequestWidget extends StatefulWidget {
   const TimeRequestWidget({super.key});
 
@@ -24,20 +23,17 @@ class TimeRequestWidget extends StatefulWidget {
 }
 
 class _TimeRequestWidgetState extends State<TimeRequestWidget>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late TimeRequestModel _model;
   final _searchCtrl = TextEditingController();
-  String _query = '';
+  String _q = '';
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => TimeRequestModel());
-    _model.tabBarController = TabController(
-      vsync: this,
-      length: 2,
-      initialIndex: 0,
-    )..addListener(() => safeSetState(() {}));
+    _model.tabBarController = TabController(length: 2, vsync: this)
+      ..addListener(() => safeSetState(() {}));
   }
 
   @override
@@ -47,85 +43,13 @@ class _TimeRequestWidgetState extends State<TimeRequestWidget>
     super.dispose();
   }
 
-  // Mock data — kept as in-file fixtures since the legacy page used the
-  // exact same hardcoded items repeated across tabs.
-  static const _earlyRequests = <_TimeRequest>[
-    _TimeRequest(
-      childName: 'Saad Ahmed',
-      grade: 'Grade 4',
-      reason: 'Doctor appointment',
-      time: '12:30 PM',
-      requestedBy: 'Khalid (Parent)',
-    ),
-    _TimeRequest(
-      childName: 'Sara Khaled',
-      grade: 'Grade 6',
-      reason: 'Family event',
-      time: '1:00 PM',
-      requestedBy: 'Deem (Guardian)',
-    ),
-    _TimeRequest(
-      childName: 'Omar Yousef',
-      grade: 'Grade 2',
-      reason: 'Medical follow-up',
-      time: '11:45 AM',
-      requestedBy: 'Yousef (Parent)',
-    ),
-    _TimeRequest(
-      childName: 'Lama Khaled',
-      grade: 'Grade 1',
-      reason: 'Family travel',
-      time: '12:00 PM',
-      requestedBy: 'Khalid (Parent)',
-    ),
-  ];
-
-  static const _lateRequests = <_TimeRequest>[
-    _TimeRequest(
-      childName: 'Noah Khaled',
-      grade: 'Grade 1',
-      reason: 'Traffic delay',
-      time: '8:30 AM',
-      requestedBy: 'Khalid (Parent)',
-    ),
-    _TimeRequest(
-      childName: 'Lina Adel',
-      grade: 'Grade 3',
-      reason: 'Personal',
-      time: '8:45 AM',
-      requestedBy: 'Adel (Parent)',
-    ),
-    _TimeRequest(
-      childName: 'Yousef Ali',
-      grade: 'Grade 5',
-      reason: 'Doctor appointment',
-      time: '9:15 AM',
-      requestedBy: 'Ali (Parent)',
-    ),
-    _TimeRequest(
-      childName: 'Maya Hassan',
-      grade: 'Grade 2',
-      reason: 'Late arrival',
-      time: '8:50 AM',
-      requestedBy: 'Hassan (Parent)',
-    ),
-  ];
-
-  List<_TimeRequest> _filter(List<_TimeRequest> list) {
-    if (_query.trim().isEmpty) return list;
-    final q = _query.toLowerCase();
-    return list
-        .where((r) =>
-            r.childName.toLowerCase().contains(q) ||
-            r.grade.toLowerCase().contains(q) ||
-            r.reason.toLowerCase().contains(q))
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final earlyFiltered = _filter(_earlyRequests);
-    final lateFiltered = _filter(_lateRequests);
+    final mock = context.watch<MockState>();
+    final early = mock.schoolTimeRequests.where((e) => e.isEarly).toList();
+    final late = mock.schoolTimeRequests.where((e) => !e.isEarly).toList();
+    final filteredEarly = _filterList(early, _q);
+    final filteredLate = _filterList(late, _q);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -135,38 +59,55 @@ class _TimeRequestWidgetState extends State<TimeRequestWidget>
         appBar: AppBar(
           backgroundColor: GateFlowColors.brandPrimary,
           elevation: 0,
-          automaticallyImplyLeading: false,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: Colors.white, size: 26),
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
             onPressed: () => context.safePop(),
           ),
           title: Text(
             'Early / Late Requests',
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 20),
           ),
-          centerTitle: false,
         ),
         body: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                child: _SearchField(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
                   controller: _searchCtrl,
-                  onChanged: (v) => setState(() => _query = v),
+                  onChanged: (v) => setState(() => _q = v),
+                  decoration: InputDecoration(
+                    hintText: 'Search name, reason, or requester',
+                    filled: true,
+                    fillColor: Colors.white,
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _SegmentedTabs(
-                  controller: _model.tabBarController!,
-                  earlyCount: earlyFiltered.length,
-                  lateCount: lateFiltered.length,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: GateFlowColors.divider),
+                  ),
+                  child: TabBar(
+                    controller: _model.tabBarController!,
+                    indicator: BoxDecoration(
+                      color: GateFlowColors.brandPrimary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: GateFlowColors.textSecondary,
+                    tabs: [
+                      Tab(text: 'Early (${early.length})'),
+                      Tab(text: 'Late (${late.length})'),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -174,24 +115,8 @@ class _TimeRequestWidgetState extends State<TimeRequestWidget>
                 child: TabBarView(
                   controller: _model.tabBarController,
                   children: [
-                    _RequestList(
-                      requests: earlyFiltered,
-                      tone: const _Tone(
-                        accent: GateFlowColors.warning,
-                        chipBg: GateFlowColors.pending,
-                        chipFg: GateFlowColors.pendingText,
-                        label: 'Early',
-                      ),
-                    ),
-                    _RequestList(
-                      requests: lateFiltered,
-                      tone: const _Tone(
-                        accent: Color(0xFFD81B60),
-                        chipBg: Color(0xFFFCE4EC),
-                        chipFg: Color(0xFFD81B60),
-                        label: 'Late',
-                      ),
-                    ),
+                    _ListPane(items: filteredEarly, isEarly: true),
+                    _ListPane(items: filteredLate, isEarly: false),
                   ],
                 ),
               ),
@@ -201,287 +126,141 @@ class _TimeRequestWidgetState extends State<TimeRequestWidget>
       ),
     );
   }
-}
 
-class _TimeRequest {
-  const _TimeRequest({
-    required this.childName,
-    required this.grade,
-    required this.reason,
-    required this.time,
-    required this.requestedBy,
-  });
-
-  final String childName;
-  final String grade;
-  final String reason;
-  final String time;
-  final String requestedBy;
-}
-
-class _Tone {
-  const _Tone({
-    required this.accent,
-    required this.chipBg,
-    required this.chipFg,
-    required this.label,
-  });
-
-  final Color accent;
-  final Color chipBg;
-  final Color chipFg;
-  final String label;
-}
-
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.onChanged});
-
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: GateFlowColors.divider),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        style: GoogleFonts.inter(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'Search by name, grade, or reason',
-          hintStyle: GoogleFonts.inter(
-            fontSize: 13.5,
-            color: GateFlowColors.textTertiary,
-          ),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: GateFlowColors.textTertiary, size: 22),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        ),
-      ),
-    );
+  List<SchoolTimeRequestEntry> _filterList(
+      List<SchoolTimeRequestEntry> base, String raw) {
+    final q = raw.trim().toLowerCase();
+    if (q.isEmpty) return base;
+    return base
+        .where((e) =>
+            e.childName.toLowerCase().contains(q) ||
+            e.reason.toLowerCase().contains(q) ||
+            e.requestedBy.toLowerCase().contains(q))
+        .toList();
   }
 }
 
-class _SegmentedTabs extends StatelessWidget {
-  const _SegmentedTabs({
-    required this.controller,
-    required this.earlyCount,
-    required this.lateCount,
-  });
+class _ListPane extends StatelessWidget {
+  const _ListPane({required this.items, required this.isEarly});
 
-  final TabController controller;
-  final int earlyCount;
-  final int lateCount;
+  final List<SchoolTimeRequestEntry> items;
+  final bool isEarly;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: GateFlowColors.divider),
-      ),
-      child: TabBar(
-        controller: controller,
-        indicator: BoxDecoration(
-          color: GateFlowColors.brandPrimary,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelColor: Colors.white,
-        unselectedLabelColor: GateFlowColors.textSecondary,
-        labelStyle: GoogleFonts.inter(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: GoogleFonts.inter(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w500,
-        ),
-        tabs: [
-          Tab(text: 'Early ($earlyCount)'),
-          Tab(text: 'Late ($lateCount)'),
-        ],
-      ),
-    );
-  }
-}
-
-class _RequestList extends StatelessWidget {
-  const _RequestList({required this.requests, required this.tone});
-
-  final List<_TimeRequest> requests;
-  final _Tone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    if (requests.isEmpty) {
+    if (items.isEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: GateFlowColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(Icons.inbox_outlined,
-                    color: GateFlowColors.textTertiary, size: 32),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'No ${tone.label.toLowerCase()} requests',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: GateFlowColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'You\'re all caught up.',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: GateFlowColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
+        child: Text(
+          'No requests',
+          style: GoogleFonts.inter(color: GateFlowColors.textSecondary),
         ),
       );
     }
-
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      itemBuilder: (_, i) => _RequestRow(request: requests[i], tone: tone),
+      itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemCount: requests.length,
+      itemBuilder: (context, i) {
+        final e = items[i];
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => context.pushNamed(
+              TimeRequestDWidget.routeName,
+              queryParameters: {'tid': e.id},
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: GateFlowColors.divider),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isEarly ? Icons.timer_outlined : Icons.schedule_rounded,
+                    color: isEarly ? GateFlowColors.warning : const Color(0xFFD81B60),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.childName,
+                          style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                        Text(
+                          '${e.grade} · ${e.reason}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: GateFlowColors.textSecondary),
+                        ),
+                        Text(
+                          e.requestedBy,
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: GateFlowColors.textTertiary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        e.timeLabel,
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w700,
+                            color: GateFlowColors.brandPrimary),
+                      ),
+                      _StatusMini(s: e.status),
+                    ],
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: GateFlowColors.textTertiary),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _RequestRow extends StatelessWidget {
-  const _RequestRow({required this.request, required this.tone});
+class _StatusMini extends StatelessWidget {
+  const _StatusMini({required this.s});
 
-  final _TimeRequest request;
-  final _Tone tone;
+  final RequestStatus s;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: () => context.pushNamed('TimeRequestD'),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: GateFlowColors.divider),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: tone.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  tone.label == 'Early'
-                      ? Icons.timer_outlined
-                      : Icons.schedule_rounded,
-                  color: tone.accent,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            request.childName,
-                            style: GoogleFonts.outfit(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w700,
-                              color: GateFlowColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: tone.chipBg,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            request.time,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: tone.chipFg,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${request.grade} · ${request.reason}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: GateFlowColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.person_outline_rounded,
-                            size: 13, color: GateFlowColors.textTertiary),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            request.requestedBy,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: 11.5,
-                              color: GateFlowColors.textTertiary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GateFlowColors.textTertiary),
-            ],
-          ),
-        ),
-      ),
+    late String t;
+    late Color c;
+    switch (s) {
+      case RequestStatus.pending:
+        t = 'Pending';
+        c = GateFlowColors.pendingText;
+        break;
+      case RequestStatus.approved:
+        t = 'Approved';
+        c = GateFlowColors.approvedText;
+        break;
+      case RequestStatus.rejected:
+        t = 'Rejected';
+        c = GateFlowColors.rejectedText;
+        break;
+    }
+    return Text(
+      t,
+      style: GoogleFonts.inter(
+          fontSize: 11, fontWeight: FontWeight.w700, color: c),
     );
   }
 }

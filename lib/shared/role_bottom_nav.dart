@@ -89,7 +89,7 @@ class RoleBottomNav extends StatelessWidget {
               label: 'Requests',
               icon: Icons.event_note_outlined,
               activeIcon: Icons.event_note_rounded,
-              route: 'RequestStatus'),
+              route: 'ParentRequestsList'),
           _NavItem(
               id: 'profile',
               label: 'Profile',

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
+import '../../data/mock_state.dart';
 import '../../shared/child_card.dart';
 import '../../shared/gateflow_colors.dart';
 import '../../shared/role_bottom_nav.dart';
@@ -10,12 +12,6 @@ import 'view_childern_model.dart';
 
 export 'view_childern_model.dart';
 
-/// Children's tracking page for parents.
-///
-/// Shows a clean list of child cards. Each card is tappable and routes to
-/// the correct details screen based on transportation type
-/// (Bus → BusWidget, Private Car → CarWidget). Attendance toggles work
-/// independently from card navigation.
 class ViewChildernWidget extends StatefulWidget {
   const ViewChildernWidget({super.key});
 
@@ -33,10 +29,6 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => ViewChildernModel());
-    _model.checkboxValue1 ??= true;
-    _model.checkboxValue2 ??= false;
-    _model.checkboxValue3 ??= true;
-    _model.checkboxValue4 ??= false;
   }
 
   @override
@@ -45,48 +37,20 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
     super.dispose();
   }
 
+  static const _emo = ['🧒', '👧', '🧒', '👧'];
+  static const _tint = [
+    Color(0xFFE8F4FD),
+    Color(0xFFFFE9E9),
+    Color(0xFFE6F4EA),
+    Color(0xFFFCE4EC),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final children = <_ChildEntry>[
-      _ChildEntry(
-        name: 'Saad Khaled',
-        grade: 'Grade 6',
-        transport: ChildTransport.car,
-        emoji: '🧒',
-        tint: const Color(0xFFE8F4FD),
-        getValue: () => _model.checkboxValue1 ?? true,
-        setValue: (v) => _model.checkboxValue1 = v,
-      ),
-      _ChildEntry(
-        name: 'Sara Khaled',
-        grade: 'Grade 6',
-        transport: ChildTransport.car,
-        emoji: '👧',
-        tint: const Color(0xFFFFE9E9),
-        getValue: () => _model.checkboxValue2 ?? false,
-        setValue: (v) => _model.checkboxValue2 = v,
-      ),
-      _ChildEntry(
-        name: 'Noah Khaled',
-        grade: 'Grade 1',
-        transport: ChildTransport.bus,
-        emoji: '🧒',
-        tint: const Color(0xFFE6F4EA),
-        getValue: () => _model.checkboxValue3 ?? true,
-        setValue: (v) => _model.checkboxValue3 = v,
-      ),
-      _ChildEntry(
-        name: 'Lama Khaled',
-        grade: 'Grade 1',
-        transport: ChildTransport.bus,
-        emoji: '👧',
-        tint: const Color(0xFFFCE4EC),
-        getValue: () => _model.checkboxValue4 ?? false,
-        setValue: (v) => _model.checkboxValue4 = v,
-      ),
-    ];
-
-    final presentCount = children.where((c) => c.getValue()).length;
+    final mock = context.watch<MockState>();
+    final children = mock.parentDemoChildren;
+    final presentCount =
+        children.where((c) => !c.absentToday).length;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -121,53 +85,36 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
                 present: presentCount,
               ),
               const SizedBox(height: 16),
-              ...children.map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ChildCard(
-                      name: c.name,
-                      grade: c.grade,
-                      transport: c.transport,
-                      emoji: c.emoji,
-                      avatarTint: c.tint,
-                      attendancePresent: c.getValue(),
-                      onAttendanceChanged: (v) {
-                        safeSetState(() => c.setValue(v));
-                      },
-                      onTap: () {
-                        context.pushNamed(
-                          c.transport == ChildTransport.bus
-                              ? BusWidget.routeName
-                              : CarWidget.routeName,
-                        );
-                      },
-                    ),
-                  )),
+              ...List.generate(children.length, (i) {
+                final c = children[i];
+                final isBus = c.transport == DemoChildTransport.bus;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ChildCard(
+                    name: c.name,
+                    grade: c.grade,
+                    transport:
+                        isBus ? ChildTransport.bus : ChildTransport.car,
+                    emoji: _emo[i % _emo.length],
+                    avatarTint: _tint[i % _tint.length],
+                    absentToday: c.absentToday,
+                    onAbsentTodayChanged: (v) {
+                      context.read<MockState>().toggleChildAbsent(c.id, v);
+                    },
+                    onTap: () {
+                      context.pushNamed(
+                        isBus ? BusWidget.routeName : CarWidget.routeName,
+                      );
+                    },
+                  ),
+                );
+              }),
             ],
           ),
         ),
       ),
     );
   }
-}
-
-class _ChildEntry {
-  _ChildEntry({
-    required this.name,
-    required this.grade,
-    required this.transport,
-    required this.emoji,
-    required this.tint,
-    required this.getValue,
-    required this.setValue,
-  });
-
-  final String name;
-  final String grade;
-  final ChildTransport transport;
-  final String emoji;
-  final Color tint;
-  final bool Function() getValue;
-  final void Function(bool) setValue;
 }
 
 class _SummaryHeader extends StatelessWidget {
@@ -206,7 +153,7 @@ class _SummaryHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Today\'s Attendance',
+                  'Transport attendance',
                   style: GoogleFonts.inter(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 12,
@@ -215,7 +162,7 @@ class _SummaryHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$present of $total marked present',
+                  '$present of $total expected for pickup today',
                   style: GoogleFonts.outfit(
                     color: Colors.white,
                     fontSize: 16,

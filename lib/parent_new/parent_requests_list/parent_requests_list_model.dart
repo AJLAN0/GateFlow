@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '/flutter_flow/flutter_flow_util.dart';
-import 'view_childern_widget.dart' show ViewChildernWidget;
+import 'parent_requests_list_widget.dart' show ParentRequestsListWidget;
 
-class ViewChildernModel extends FlutterFlowModel<ViewChildernWidget> {
+class ParentRequestsListModel extends FlutterFlowModel<ParentRequestsListWidget> {
   @override
   void initState(BuildContext context) {}
 

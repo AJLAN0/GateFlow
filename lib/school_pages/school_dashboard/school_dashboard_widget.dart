@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '/flutter_flow/flutter_flow_util.dart';
+import '/school_pages/parent_verification/parent_verification_widget.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
 import '../../shared/role_bottom_nav.dart';
@@ -83,7 +84,8 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
               ),
               const SizedBox(height: 20),
               _VerifyCta(
-                onPressed: () => context.pushNamed('ParentVerification'),
+                onPressed: () =>
+                    context.pushNamed(ParentVerificationWidget.routeName),
               ),
               const SizedBox(height: 22),
               const _AdminSectionTitle(title: 'Management'),

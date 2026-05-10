@@ -1,27 +1,22 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '/index.dart';
 import '../../data/mock_state.dart';
-import 'package:provider/provider.dart';
+import '../../shared/gateflow_colors.dart';
+import '../../shared/status_pill.dart';
 import 'confirm_boarding_model.dart';
+
 export 'confirm_boarding_model.dart';
 
-/// 4) Confirm Boarding
-/// - AppBar: back arrow, title “Confirm Boarding”.
+/// Mock camera / QR scan flow for drivers (no real camera).
 ///
-/// - Student summary card at top: Name “Saleh”, Student ID “ST-2024-0847”,
-/// Grade and school, current state “Not Boarded”.
-/// - Large QR scan area card with QR icon, text “Scan QR Code” + hint “Point
-/// camera at student’s QR code”.
-/// - Primary button: “Scan QR Code”.
-/// - Divider text “OR”. test
-/// - Outlined button: “Confirm Manually”.asfinaf
-/// - Footer note: “Boarding Verification: Ensure student identity matches
-/// before confirming boarding.”
+/// First scan in a session → On bus · Second → Dropped off · Third → alert.
 class ConfirmBoardingWidget extends StatefulWidget {
   const ConfirmBoardingWidget({super.key});
 
@@ -37,6 +32,10 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  /// `camera` = scanning UI · `summary` = last outcome card.
+  _ScanPhase _phase = _ScanPhase.camera;
+  DriverScanOutcome? _outcome;
+
   @override
   void initState() {
     super.initState();
@@ -46,189 +45,480 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  List<Student> _assigned(MockState m) =>
+      m.students.where((s) => s.busId == 'b1').toList();
+
+  Student? _pickDefault(MockState m) {
+    final list = _assigned(m);
+    return list.isNotEmpty ? list.first : null;
+  }
+
+  void _applyOutcome(DriverScanOutcome o) {
+    setState(() {
+      _outcome = o;
+      _phase = _ScanPhase.summary;
+    });
+  }
+
+  void _simulateScanFor(MockState mock, Student s) {
+    final o = mock.recordDriverBoardingScan(s.id);
+    _applyOutcome(o);
+  }
+
+  Future<void> _openManualPicker(MockState mock) async {
+    final students = _assigned(mock);
+    if (students.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No students assigned on this route (mock).'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final picked = await showModalBottomSheet<Student>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text(
+                'Manual entry · select student',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: GateFlowColors.textPrimary,
+                ),
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: students
+                    .map(
+                      (s) => ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: GateFlowColors.brandPrimary,
+                          child: Text(
+                            s.name.isNotEmpty ? s.name[0] : '?',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        title: Text(s.name,
+                            style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                            '${s.grade} · ${_statusReadable(s.status)} · ${s.lastMockUpdateLabel}'),
+                        onTap: () => Navigator.pop(ctx, s),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) _simulateScanFor(mock, picked);
+  }
+
+  String _statusReadable(StudentStatus s) {
+    switch (s) {
+      case StudentStatus.atHome:
+        return 'At home';
+      case StudentStatus.onBusToSchool:
+        return 'On bus (to school)';
+      case StudentStatus.atSchool:
+        return 'At school';
+      case StudentStatus.onBusToHome:
+        return 'On bus (home)';
+      case StudentStatus.pickedUpByCar:
+        return 'Car pickup';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: Color(0xFF0C3451),
+          backgroundColor: GateFlowColors.brandPrimary,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
-            borderRadius: 30.0,
-            borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 30.0,
-            ),
-            onPressed: () async {
-              context.safePop();
-            },
+            borderRadius: 30,
+            borderWidth: 1,
+            buttonSize: 56,
+            icon: const Icon(Icons.arrow_back_rounded,
+                color: Colors.white, size: 26),
+            onPressed: () => context.safePop(),
           ),
           title: Text(
-            'Confirm Boarding ',
-            style: FlutterFlowTheme.of(context).titleLarge.override(
-                  font: GoogleFonts.outfit(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                  fontSize: 24.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                  fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                ),
+            'Scan student',
+            style: GoogleFonts.outfit(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
           ),
-          actions: [],
-          centerTitle: false,
-          elevation: 2.0,
+          elevation: 0,
         ),
         body: SafeArea(
-          top: true,
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 200.0,
-                  decoration: BoxDecoration(
-                    color: FlutterFlowTheme.of(context).secondaryBackground,
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(
-                      color: FlutterFlowTheme.of(context).alternate,
-                      width: 2.0,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          color: Color(0xFF0C3451),
-                          size: 64.0,
-                        ),
-                        Text(
-                          'Scan QR Code',
-                          textAlign: TextAlign.center,
-                          style:
-                              FlutterFlowTheme.of(context).titleMedium.override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleMedium
-                                        .fontStyle,
-                                  ),
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              24.0, 0.0, 24.0, 0.0),
-                          child: Text(
-                            'Point camera at student\'s QR code',
-                            textAlign: TextAlign.center,
-                            style:
-                                FlutterFlowTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .fontStyle,
-                                      ),
-                                      color: FlutterFlowTheme.of(context)
-                                          .secondaryText,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodySmall
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodySmall
-                                          .fontStyle,
-                                    ),
-                          ),
-                        ),
-                      ].divide(SizedBox(height: 16.0)),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
-                  child: FFButtonWidget(
-                    onPressed: () {
-                      final mockState = Provider.of<MockState>(context, listen: false);
-                      mockState.updateStudentStatus('s1', StudentStatus.onBusToSchool);
+          child: _phase == _ScanPhase.summary && _outcome != null
+              ? _SummaryPane(
+                  outcome: _outcome!,
+                  onScanAnother: () => setState(() {
+                    _phase = _ScanPhase.camera;
+                    _outcome = null;
+                  }),
+                )
+              : _CameraPane(
+                  onSimulate: () {
+                    final s = _pickDefault(mock);
+                    if (s == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('✅ Student boarding confirmed!'),
-                          backgroundColor: Color(0xFF22C55E),
+                        const SnackBar(
+                          content:
+                              Text('Assign students to the bus route first.'),
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       );
-                    },
-                    text: 'Scan QR Code',
-                    options: FFButtonOptions(
-                      width: double.infinity,
-                      height: 56.0,
-                      padding: EdgeInsets.all(8.0),
-                      iconPadding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                      color: Color(0xFF0C3451),
-                      textStyle:
-                          FlutterFlowTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.interTight(
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Colors.white,
-                                fontSize: 16.0,
-                                letterSpacing: 0.0,
-                                fontWeight: FontWeight.bold,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
+                      return;
+                    }
+                    _simulateScanFor(mock, s);
+                  },
+                  onManual: () => _openManualPicker(mock),
+                  onOpenList: () => context.pushNamed(
+                    AssignedStudentslistWidget.routeName,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _ScanPhase { camera, summary }
+
+class _CameraPane extends StatelessWidget {
+  const _CameraPane({
+    required this.onSimulate,
+    required this.onManual,
+    required this.onOpenList,
+  });
+
+  final VoidCallback onSimulate;
+  final VoidCallback onManual;
+  final VoidCallback onOpenList;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Align the QR code inside the frame',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: GateFlowColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AspectRatio(
+                  aspectRatio: 3 / 4,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111827),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 22,
+                          offset: Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(22),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.06),
+                                  Colors.black.withValues(alpha: 0.35),
+                                ],
                               ),
-                      elevation: 0.0,
-                      borderSide: BorderSide(
-                        color: Colors.transparent,
-                        width: 0.0,
-                      ),
-                      borderRadius: BorderRadius.circular(14.0),
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.photo_camera_outlined,
+                            size: 56, color: Colors.white.withValues(alpha: 0.35)),
+                        Center(
+                          child: Container(
+                            width: 220,
+                            height: 220,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: GateFlowColors.brandAccent.withValues(alpha: 0.95),
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 24,
+                          left: 24,
+                          right: 24,
+                          child: Text(
+                            'Camera preview (mock) · Indoor lighting simulated',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ].divide(SizedBox(height: 24.0)),
+                const SizedBox(height: 22),
+                FFButtonWidget(
+                  onPressed: onSimulate,
+                  text: 'Simulate scan',
+                  options: FFButtonOptions(
+                    width: double.infinity,
+                    height: 54,
+                    color: GateFlowColors.brandPrimary,
+                    textStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                    elevation: 0,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                const SizedBox(height: 28),
+              ],
             ),
           ),
         ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 16,
+                offset: Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onManual,
+                  icon: const Icon(Icons.edit_note_rounded, size: 20),
+                  label: const Text('Manual entry'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GateFlowColors.brandPrimary,
+                    side: BorderSide(color: GateFlowColors.divider),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onOpenList,
+                  icon: const Icon(Icons.groups_outlined, size: 20),
+                  label: const Text('Student list'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GateFlowColors.brandPrimary,
+                    side: BorderSide(color: GateFlowColors.divider),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryPane extends StatelessWidget {
+  const _SummaryPane({
+    required this.outcome,
+    required this.onScanAnother,
+  });
+
+  final DriverScanOutcome outcome;
+  final VoidCallback onScanAnother;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = outcome.warning ? StatusTone.rejected : StatusTone.success;
+    final time =
+        '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: GateFlowColors.divider),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0F0C3451),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      outcome.warning
+                          ? Icons.warning_amber_rounded
+                          : Icons.verified_rounded,
+                      color: outcome.warning
+                          ? GateFlowColors.warning
+                          : GateFlowColors.success,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        outcome.title,
+                        style: GoogleFonts.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: GateFlowColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  outcome.studentName,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  outcome.detail,
+                  style: GoogleFonts.inter(
+                    fontSize: 13.5,
+                    color: GateFlowColors.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    StatusPill(
+                      label: outcome.warning ? 'Alert' : 'Updated',
+                      tone: tone,
+                      icon: outcome.warning
+                          ? Icons.report_gmailerrorred_outlined
+                          : Icons.check_circle_outline,
+                    ),
+                    StatusPill(
+                      label: time,
+                      tone: StatusTone.neutral,
+                      icon: Icons.schedule_rounded,
+                    ),
+                  ],
+                ),
+                if (outcome.showStaffAlert) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4E0),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: GateFlowColors.warning.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: Text(
+                      'School staff has been alerted in Operations (mock).',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.8,
+                        color: GateFlowColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          FFButtonWidget(
+            onPressed: onScanAnother,
+            text: 'Scan another student',
+            options: FFButtonOptions(
+              width: double.infinity,
+              height: 52,
+              color: GateFlowColors.brandPrimary,
+              textStyle: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ],
       ),
     );
   }

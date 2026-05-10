@@ -63,11 +63,11 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
             children: [
               const SizedBox(height: 8),
               _GHeader(
-                name: 'Mohammed',
+                name: mockState.guardianProfile.fullName.split(' ').first,
                 pendingCount: pendingCount,
               ),
               const SizedBox(height: 22),
-              const _GSectionTitle(title: 'Quick Actions'),
+              const _GSectionTitle(title: 'Shortcuts'),
               const SizedBox(height: 10),
               _GQuickActions(),
               const SizedBox(height: 24),
@@ -77,8 +77,10 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
                   const _GSectionTitle(title: 'Latest Request'),
                   if (latestReq != null)
                     TextButton(
-                      onPressed: () =>
-                          context.pushNamed(RequestStatusWidget.routeName),
+                      onPressed: () => context.pushNamed(
+                        RequestStatusWidget.routeName,
+                        queryParameters: {'rid': latestReq.id},
+                      ),
                       child: Text(
                         'See details',
                         style: GoogleFonts.inter(
@@ -184,7 +186,8 @@ class _GHeader extends StatelessWidget {
           _GIconBtn(
             icon: Icons.notifications_none_rounded,
             badge: pendingCount > 0,
-            onTap: () => context.pushNamed('NotificationsG'),
+            onTap: () =>
+                context.pushNamed(NotificationsGWidget.routeName),
           ),
           const SizedBox(width: 8),
           _GIconBtn(
@@ -266,50 +269,44 @@ class _GSectionTitle extends StatelessWidget {
 class _GQuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final latest =
+        mock.requests.isNotEmpty ? mock.requests.last : null;
+
     final actions = <_GQuickAction>[
       _GQuickAction(
-        icon: Icons.child_care_rounded,
-        title: 'View Children',
-        subtitle: 'Track & monitor',
-        tint: const Color(0xFFE8F0FE),
-        iconColor: GateFlowColors.brandPrimary,
-        onTap: () => context.pushNamed(ViewChildernGWidget.routeName),
-      ),
-      _GQuickAction(
-        icon: Icons.fact_check_outlined,
-        title: 'Requests',
-        subtitle: 'View status',
-        tint: const Color(0xFFFFF4E0),
-        iconColor: GateFlowColors.warning,
-        onTap: () => context.pushNamed(RequestStatusWidget.routeName),
-      ),
-      _GQuickAction(
         icon: Icons.notifications_active_outlined,
-        title: 'Notifications',
-        subtitle: 'School updates',
+        title: 'School updates',
+        subtitle: 'Operational messages',
         tint: const Color(0xFFFCE4EC),
         iconColor: const Color(0xFFD81B60),
-        onTap: () => context.pushNamed('NotificationsG'),
+        onTap: () => context.pushNamed(NotificationsGWidget.routeName),
       ),
-      _GQuickAction(
-        icon: Icons.account_circle_outlined,
-        title: 'My Profile',
-        subtitle: 'Account info',
-        tint: const Color(0xFFE6F4EA),
-        iconColor: GateFlowColors.success,
-        onTap: () => context.pushNamed(ProfileGWidget.routeName),
-      ),
+      if (latest != null)
+        _GQuickAction(
+          icon: Icons.fact_check_outlined,
+          title: 'Latest request',
+          subtitle: 'Timeline & status',
+          tint: const Color(0xFFFFF4E0),
+          iconColor: GateFlowColors.warning,
+          onTap: () => context.pushNamed(
+            RequestStatusWidget.routeName,
+            queryParameters: {'rid': latest.id},
+          ),
+        ),
     ];
+
+    if (actions.isEmpty) return const SizedBox.shrink();
 
     return GridView.builder(
       itemCount: actions.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: actions.length >= 2 ? 2 : 1,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.45,
+        childAspectRatio: 1.55,
       ),
       itemBuilder: (_, i) => actions[i],
     );
@@ -438,7 +435,10 @@ class _GLatestRequestCard extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        onTap: () => context.pushNamed(RequestStatusWidget.routeName),
+        onTap: () => context.pushNamed(
+          RequestStatusWidget.routeName,
+          queryParameters: {'rid': r.id},
+        ),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(18),
@@ -526,12 +526,18 @@ class _GLatestRequestCard extends StatelessWidget {
               const SizedBox(height: 14),
               const Divider(height: 1, color: GateFlowColors.divider),
               const SizedBox(height: 14),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _GMetaItem(label: 'Pickup Time', value: '3:30 PM'),
-                  _GMetaItem(label: 'Parent', value: 'Khalid'),
-                  _GMetaItem(label: 'Child', value: 'Omar'),
+                  _GMetaItem(label: 'Time', value: r.timeLabel ?? '—'),
+                  _GMetaItem(
+                    label: 'Pickup person',
+                    value: r.pickupPersonSummary ?? '—',
+                  ),
+                  _GMetaItem(
+                    label: 'Child',
+                    value: context.read<MockState>().demoChildName(r.studentId),
+                  ),
                 ],
               ),
             ],
