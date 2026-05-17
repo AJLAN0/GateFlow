@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
-import '../../shared/role_bottom_nav.dart';
 import '../../shared/sign_out_tile.dart';
 import '../../shared/status_pill.dart';
 import 'profile_g_model.dart';
@@ -64,7 +63,6 @@ class _ProfileGWidgetState extends State<ProfileGWidget> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        bottomNavigationBar: const RoleBottomNav(current: 'profile'),
         backgroundColor: GateFlowColors.surface,
         appBar: AppBar(
           elevation: 0,
@@ -139,27 +137,13 @@ class _ProfileGWidgetState extends State<ProfileGWidget> {
                   _InfoRow(Icons.email_outlined, g.email),
                   const SizedBox(height: 10),
                   _InfoRow(Icons.family_restroom_rounded, g.relationship),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 6),
                   Text(
-                    'Assigned children',
+                    'Assigned students appear under Children.',
                     style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      color: GateFlowColors.textSecondary,
+                      fontSize: 12,
+                      color: GateFlowColors.textTertiary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: g.assignedChildNames
-                        .map((n) => StatusPill(
-                              label: n,
-                              tone: StatusTone.info,
-                              icon: Icons.child_care_rounded,
-                              dense: true,
-                            ))
-                        .toList(),
                   ),
                 ],
               ),

@@ -7,7 +7,6 @@ import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/child_card.dart';
 import '../../shared/gateflow_colors.dart';
-import '../../shared/role_bottom_nav.dart';
 import 'view_childern_g_model.dart';
 
 export 'view_childern_g_model.dart';
@@ -56,7 +55,6 @@ class _ViewChildernGWidgetState extends State<ViewChildernGWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
-        bottomNavigationBar: const RoleBottomNav(current: 'children'),
         appBar: AppBar(
           backgroundColor: GateFlowColors.brandPrimary,
           elevation: 0,

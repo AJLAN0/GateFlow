@@ -7,7 +7,6 @@ import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../shared/role_bottom_nav.dart';
 import '../../shared/sign_out_tile.dart';
 import 'bus_driver_profile_model.dart';
 export 'bus_driver_profile_model.dart';
@@ -49,7 +48,6 @@ class _BusDriverProfileWidgetState extends State<BusDriverProfileWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        bottomNavigationBar: RoleBottomNav(current: 'profile'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),

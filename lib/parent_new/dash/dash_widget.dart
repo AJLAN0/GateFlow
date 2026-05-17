@@ -7,7 +7,6 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
-import '../../shared/role_bottom_nav.dart';
 import 'dash_model.dart';
 
 export 'dash_model.dart';
@@ -57,7 +56,6 @@ class _DashWidgetState extends State<DashWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
-        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(

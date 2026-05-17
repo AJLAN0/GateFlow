@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../../data/mock_state.dart';
 import 'student_add_model.dart';
 export 'student_add_model.dart';
 
@@ -757,138 +758,124 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                     isMultiSelect: false,
                                   ),
                                   if (_model.dropDownTransValue == 'School Bus')
-                                    Expanded(
-                                      child: Container(
-                                        width: 328.8,
-                                        decoration: BoxDecoration(
-                                          color: FlutterFlowTheme.of(context)
-                                              .secondaryBackground,
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Divider(
+                                          height: 24.0,
+                                          thickness: 1.0,
+                                          color:
+                                              FlutterFlowTheme.of(context)
+                                                  .alternate,
                                         ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.max,
-                                          children: [
-                                            Divider(
-                                              height: 24.0,
-                                              thickness: 1.0,
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .alternate,
-                                            ),
-                                            Align(
-                                              alignment: AlignmentDirectional(
-                                                  -1.0, 0.0),
-                                              child: Text(
-                                                'Bus Number *',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .interTight(
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontStyle,
-                                                          ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .titleSmall
-                                                                  .fontStyle,
-                                                        ),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsetsDirectional
-                                                  .fromSTEB(0.0, 6.0, 0.0, 0.0),
-                                              child: Container(
-                                                decoration: BoxDecoration(),
-                                                child:
-                                                    FlutterFlowDropDown<String>(
-                                                  controller: _model
-                                                          .dropDownBusNoValueController ??=
-                                                      FormFieldController<
-                                                          String>(null),
-                                                  options: <String>[],
-                                                  onChanged: (val) =>
-                                                      safeSetState(() => _model
-                                                              .dropDownBusNoValue =
-                                                          val),
-                                                  width: double.infinity,
-                                                  height: 52.0,
-                                                  textStyle: FlutterFlowTheme
-                                                          .of(context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontWeight,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                        color:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .secondaryText,
-                                                        fontSize: 15.0,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontWeight,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
-                                                      ),
-                                                  hintText:
-                                                      '  Select Bus Number',
-                                                  icon: Icon(
-                                                    Icons
-                                                        .keyboard_arrow_down_rounded,
-                                                    color: FlutterFlowTheme.of(
-                                                            context)
-                                                        .secondaryText,
-                                                    size: 22.0,
+                                        Align(
+                                          alignment: AlignmentDirectional(
+                                              -1.0, 0.0),
+                                          child: Text(
+                                            'Bus Number *',
+                                            style: FlutterFlowTheme.of(context)
+                                                .titleSmall
+                                                .override(
+                                                  font:
+                                                      GoogleFonts.interTight(
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                    fontStyle:
+                                                        FlutterFlowTheme.of(
+                                                                context)
+                                                            .titleSmall
+                                                            .fontStyle,
                                                   ),
-                                                  fillColor:
+                                                  letterSpacing: 0.0,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontStyle:
                                                       FlutterFlowTheme.of(
                                                               context)
-                                                          .primaryBackground,
-                                                  elevation: 2.0,
-                                                  borderColor:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .alternate,
-                                                  borderWidth: 1.5,
-                                                  borderRadius: 10.0,
-                                                  margin: EdgeInsetsDirectional
-                                                      .fromSTEB(
-                                                          0.0, 0.0, 0.0, 0.0),
-                                                  hidesUnderline: true,
-                                                  isOverButton: false,
-                                                  isSearchable: false,
-                                                  isMultiSelect: false,
+                                                          .titleSmall
+                                                          .fontStyle,
                                                 ),
-                                              ),
-                                            ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
+                                        Padding(
+                                          padding: EdgeInsetsDirectional
+                                              .fromSTEB(0.0, 6.0, 0.0, 0.0),
+                                          child: FlutterFlowDropDown<String>(
+                                            controller: _model
+                                                    .dropDownBusNoValueController ??=
+                                                FormFieldController<String>(
+                                                    null),
+                                            options: context
+                                                .watch<MockState>()
+                                                .buses
+                                                .map((b) => b.name)
+                                                .toList(),
+                                            onChanged: (val) => safeSetState(
+                                                () => _model
+                                                    .dropDownBusNoValue = val),
+                                            width: double.infinity,
+                                            height: 52.0,
+                                            textStyle: FlutterFlowTheme.of(
+                                                    context)
+                                                .bodyMedium
+                                                .override(
+                                                  font: GoogleFonts.inter(
+                                                    fontWeight:
+                                                        FlutterFlowTheme.of(
+                                                                context)
+                                                            .bodyMedium
+                                                            .fontWeight,
+                                                    fontStyle:
+                                                        FlutterFlowTheme.of(
+                                                                context)
+                                                            .bodyMedium
+                                                            .fontStyle,
+                                                  ),
+                                                  color:
+                                                      FlutterFlowTheme.of(
+                                                              context)
+                                                          .secondaryText,
+                                                  fontSize: 15.0,
+                                                  letterSpacing: 0.0,
+                                                  fontWeight:
+                                                      FlutterFlowTheme.of(
+                                                              context)
+                                                          .bodyMedium
+                                                          .fontWeight,
+                                                  fontStyle:
+                                                      FlutterFlowTheme.of(
+                                                              context)
+                                                          .bodyMedium
+                                                          .fontStyle,
+                                                ),
+                                            hintText: '  Select Bus Number',
+                                            icon: Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: FlutterFlowTheme.of(
+                                                      context)
+                                                  .secondaryText,
+                                              size: 22.0,
+                                            ),
+                                            fillColor:
+                                                FlutterFlowTheme.of(context)
+                                                    .primaryBackground,
+                                            elevation: 2.0,
+                                            borderColor:
+                                                FlutterFlowTheme.of(context)
+                                                    .alternate,
+                                            borderWidth: 1.5,
+                                            borderRadius: 10.0,
+                                            margin:
+                                                EdgeInsetsDirectional.fromSTEB(
+                                                    0.0, 0.0, 0.0, 0.0),
+                                            hidesUnderline: true,
+                                            isOverButton: false,
+                                            isSearchable: false,
+                                            isMultiSelect: false,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   Divider(
                                     height: 24.0,

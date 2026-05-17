@@ -7,7 +7,6 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
-import '../../shared/role_bottom_nav.dart';
 import 'bus_supervisor_dashboard_model.dart';
 
 export 'bus_supervisor_dashboard_model.dart';
@@ -70,7 +69,6 @@ class _BusSupervisorDashboardWidgetState
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
-        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(
@@ -87,10 +85,6 @@ class _BusSupervisorDashboardWidgetState
               _RoutePreviewCard(bus: bus, completionPct: progress),
               const SizedBox(height: 14),
               _DriverPrimaryActions(),
-              const SizedBox(height: 22),
-              const _BusSectionTitle(title: 'Operational shortcuts'),
-              const SizedBox(height: 10),
-              _BusQuickActions(),
             ],
           ).animate().fade(duration: 500.ms).slideY(begin: 0.05, end: 0),
         ),
@@ -342,7 +336,13 @@ class _RoutePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (completionPct.clamp(0.0, 1.0) * 100).round();
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () =>
+            context.pushNamed(BusStatusViewWidget.routeName),
+        child: Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -447,7 +447,25 @@ class _RoutePreviewCard extends StatelessWidget {
               color: GateFlowColors.textSecondary,
             ),
           ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'View full bus status',
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: GateFlowColors.brandPrimary,
+                ),
+              ),
+              const Icon(Icons.open_in_new_rounded,
+                  size: 18, color: GateFlowColors.brandPrimary),
+            ],
+          ),
         ],
+      ),
+    ),
       ),
     );
   }
@@ -554,135 +572,6 @@ class _DriverPrimaryActions extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _BusSectionTitle extends StatelessWidget {
-  const _BusSectionTitle({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: GoogleFonts.outfit(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: GateFlowColors.brandPrimary,
-      ),
-    );
-  }
-}
-
-class _BusQuickActions extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final actions = <_BusActionCard>[
-      _BusActionCard(
-        icon: Icons.notifications_active_outlined,
-        title: 'School alerts',
-        subtitle: 'Dispatch & reminders',
-        tint: const Color(0xFFFFF4E0),
-        iconColor: GateFlowColors.warning,
-        onTap: () =>
-            context.pushNamed(BusNotificationsWidget.routeName),
-      ),
-      _BusActionCard(
-        icon: Icons.route_rounded,
-        title: 'Bus status summary',
-        subtitle: 'Line health (mock)',
-        tint: const Color(0xFFE8F0FE),
-        iconColor: GateFlowColors.brandPrimary,
-        onTap: () => context.pushNamed(BusStatusViewWidget.routeName),
-      ),
-    ];
-
-    return GridView.builder(
-      itemCount: actions.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.45,
-      ),
-      itemBuilder: (_, i) => actions[i],
-    );
-  }
-}
-
-class _BusActionCard extends StatelessWidget {
-  const _BusActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.tint,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color tint;
-  final Color iconColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: GateFlowColors.divider),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: tint,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: GateFlowColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 11.5,
-                      color: GateFlowColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

@@ -10,7 +10,6 @@ import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
 import '../../shared/status_pill.dart';
-import '../../shared/role_bottom_nav.dart';
 import 'assigned_studentslist_model.dart';
 
 export 'assigned_studentslist_model.dart';
@@ -119,7 +118,6 @@ class _AssignedStudentslistWidgetState
       },
       child: Scaffold(
         key: scaffoldKey,
-        bottomNavigationBar: const RoleBottomNav(current: 'students'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: GateFlowColors.brandPrimary,

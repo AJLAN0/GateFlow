@@ -202,9 +202,6 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
                     _simulateScanFor(mock, s);
                   },
                   onManual: () => _openManualPicker(mock),
-                  onOpenList: () => context.pushNamed(
-                    AssignedStudentslistWidget.routeName,
-                  ),
                 ),
         ),
       ),
@@ -218,12 +215,10 @@ class _CameraPane extends StatelessWidget {
   const _CameraPane({
     required this.onSimulate,
     required this.onManual,
-    required this.onOpenList,
   });
 
   final VoidCallback onSimulate;
   final VoidCallback onManual;
-  final VoidCallback onOpenList;
 
   @override
   Widget build(BuildContext context) {
@@ -343,38 +338,25 @@ class _CameraPane extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onManual,
-                  icon: const Icon(Icons.edit_note_rounded, size: 20),
-                  label: const Text('Manual entry'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: GateFlowColors.brandPrimary,
-                    side: BorderSide(color: GateFlowColors.divider),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onManual,
+              icon: const Icon(Icons.edit_note_rounded, size: 20),
+              label: Text(
+                'Manual entry',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onOpenList,
-                  icon: const Icon(Icons.groups_outlined, size: 20),
-                  label: const Text('Student list'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: GateFlowColors.brandPrimary,
-                    side: BorderSide(color: GateFlowColors.divider),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GateFlowColors.brandPrimary,
+                side: BorderSide(color: GateFlowColors.divider),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
-            ],
+            ),
           ),
         ),
       ],

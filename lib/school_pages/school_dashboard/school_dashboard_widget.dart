@@ -7,7 +7,6 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/school_pages/parent_verification/parent_verification_widget.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
-import '../../shared/role_bottom_nav.dart';
 import 'school_dashboard_model.dart';
 
 export 'school_dashboard_model.dart';
@@ -67,7 +66,6 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
-        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(
@@ -493,14 +491,6 @@ class _AdminActionsGrid extends StatelessWidget {
         tint: const Color(0xFFFFE9E9),
         iconColor: GateFlowColors.danger,
         onTap: () => context.pushNamed('BusStatus'),
-      ),
-      _AdminAction(
-        icon: Icons.notifications_active_outlined,
-        title: 'Announcements',
-        subtitle: 'School news',
-        tint: const Color(0xFFEDE7F6),
-        iconColor: const Color(0xFF7C4DFF),
-        onTap: () => context.pushNamed('SchoolNotification'),
       ),
     ];
 

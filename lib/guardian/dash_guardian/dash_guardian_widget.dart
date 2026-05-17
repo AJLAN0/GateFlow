@@ -7,7 +7,6 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
-import '../../shared/role_bottom_nav.dart';
 import 'dash_guardian_model.dart';
 
 export 'dash_guardian_model.dart';
@@ -55,7 +54,6 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
-        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(
@@ -67,10 +65,6 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
                 pendingCount: pendingCount,
               ),
               const SizedBox(height: 22),
-              const _GSectionTitle(title: 'Shortcuts'),
-              const SizedBox(height: 10),
-              _GQuickActions(),
-              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -261,126 +255,6 @@ class _GSectionTitle extends StatelessWidget {
         fontSize: 16,
         fontWeight: FontWeight.w700,
         color: GateFlowColors.brandPrimary,
-      ),
-    );
-  }
-}
-
-class _GQuickActions extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final mock = context.watch<MockState>();
-    final latest =
-        mock.requests.isNotEmpty ? mock.requests.last : null;
-
-    final actions = <_GQuickAction>[
-      _GQuickAction(
-        icon: Icons.notifications_active_outlined,
-        title: 'School updates',
-        subtitle: 'Operational messages',
-        tint: const Color(0xFFFCE4EC),
-        iconColor: const Color(0xFFD81B60),
-        onTap: () => context.pushNamed(NotificationsGWidget.routeName),
-      ),
-      if (latest != null)
-        _GQuickAction(
-          icon: Icons.fact_check_outlined,
-          title: 'Latest request',
-          subtitle: 'Timeline & status',
-          tint: const Color(0xFFFFF4E0),
-          iconColor: GateFlowColors.warning,
-          onTap: () => context.pushNamed(
-            RequestStatusWidget.routeName,
-            queryParameters: {'rid': latest.id},
-          ),
-        ),
-    ];
-
-    if (actions.isEmpty) return const SizedBox.shrink();
-
-    return GridView.builder(
-      itemCount: actions.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: actions.length >= 2 ? 2 : 1,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.55,
-      ),
-      itemBuilder: (_, i) => actions[i],
-    );
-  }
-}
-
-class _GQuickAction extends StatelessWidget {
-  const _GQuickAction({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.tint,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color tint;
-  final Color iconColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: GateFlowColors.divider),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: tint,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: GateFlowColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 11.5,
-                      color: GateFlowColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
