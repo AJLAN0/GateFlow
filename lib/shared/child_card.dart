@@ -20,6 +20,7 @@ class ChildCard extends StatelessWidget {
     required this.onAbsentTodayChanged,
     required this.onTap,
     this.allowAbsentToggle = true,
+    this.statusBadge,
   });
 
   final String name;
@@ -31,6 +32,7 @@ class ChildCard extends StatelessWidget {
   final ValueChanged<bool> onAbsentTodayChanged;
   final VoidCallback onTap;
   final bool allowAbsentToggle;
+  final Widget? statusBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +97,10 @@ class ChildCard extends StatelessWidget {
                                 ? Icons.directions_bus_rounded
                                 : Icons.directions_car_rounded,
                           ),
+                          if (statusBadge != null) ...[
+                            const SizedBox(height: 8),
+                            statusBadge!,
+                          ],
                         ],
                       ),
                     ),

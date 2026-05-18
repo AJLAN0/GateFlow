@@ -13,7 +13,7 @@ import 'parent_verification_model.dart';
 
 export 'parent_verification_model.dart';
 
-/// Gate pickup verification — ties to approved parent requests only (mock).
+/// Gate pickup verification: mock scan UI + ID/phone directory lookup + queue release.
 class ParentVerificationWidget extends StatefulWidget {
   const ParentVerificationWidget({super.key});
 
@@ -29,7 +29,8 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
   late ParentVerificationModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  ParentRequest? _selected;
+  GatePickupPersonProfile? _lookupResult;
+  ParentRequest? _queueSelected;
   bool? _mockScanPositive;
 
   @override
@@ -38,6 +39,10 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
     _model = createModel(context, () => ParentVerificationModel());
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
+    _model.textController2 ??= TextEditingController();
+    _model.textFieldFocusNode2 ??= FocusNode();
+    _model.textController3 ??= TextEditingController();
+    _model.textFieldFocusNode3 ??= FocusNode();
   }
 
   @override
@@ -57,7 +62,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
     }
   }
 
-  List<ParentRequest> _filtered(MockState m, String q) {
+  List<ParentRequest> _filteredQueue(MockState m, String q) {
     final base = m.approvedParentRequestsAwaitingPickup();
     final s = q.trim().toLowerCase();
     if (s.isEmpty) return base;
@@ -70,10 +75,42 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
     }).toList();
   }
 
+  void _lookupById(MockState mock) {
+    FocusScope.of(context).unfocus();
+    final raw = _model.textController1?.text ?? '';
+    final hit = mock.lookupGatePickupPersonByNationalId(raw);
+    setState(() {
+      _lookupResult = hit;
+      _mockScanPositive = null;
+      _queueSelected = null;
+    });
+  }
+
+  void _lookupByPhone(MockState mock) {
+    FocusScope.of(context).unfocus();
+    final raw = _model.textController2?.text ?? '';
+    final hit = mock.lookupGatePickupPersonByPhone(raw);
+    setState(() {
+      _lookupResult = hit;
+      _mockScanPositive = null;
+      _queueSelected = null;
+    });
+  }
+
+  void _simulateQr(MockState mock) {
+    FocusScope.of(context).unfocus();
+    final hit =
+        mock.lookupGatePickupPersonByNationalId('9876543210'); // demo guardian
+    setState(() {
+      _lookupResult = hit;
+      _model.textController1?.text = hit?.nationalId ?? '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final mock = context.watch<MockState>();
-    final query = _model.textController1?.text ?? '';
+    final queueQ = _model.textController3?.text ?? '';
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -106,26 +143,188 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
             children: [
               Text(
-                'Approved requests queued for pickup',
+                'Scan mode',
                 style: GoogleFonts.outfit(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: GateFlowColors.textPrimary,
                 ),
               ),
+              const SizedBox(height: 8),
+              AspectRatio(
+                aspectRatio: 3 / 3.4,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: GateFlowColors.brandAccent.withValues(alpha: .5),
+                        width: 2),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _ScanFramePainter(),
+                        ),
+                      ),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.qr_code_scanner_rounded,
+                                color: Colors.white.withValues(alpha: 0.85),
+                                size: 48),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Align ID / QR within the frame',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Camera preview (mock)',
+                              style: GoogleFonts.inter(
+                                  color: Colors.white38, fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              FFButtonWidget(
+                onPressed: () => _simulateQr(mock),
+                text: 'Simulate successful scan',
+                options: FFButtonOptions(
+                  width: double.infinity,
+                  height: 48,
+                  color: GateFlowColors.brandPrimary,
+                  textStyle: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Manual verification',
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: GateFlowColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 6),
               Text(
-                'Pick a row, simulate a guardian QR scan, then release the student.',
+                'Try National ID `1234567890` (parent) or `9876543210` (guardian).\nPhone: `+966 50 111 2233` or `0500004411`.',
                 style: GoogleFonts.inter(
-                  fontSize: 13,
+                  fontSize: 12.5,
                   color: GateFlowColors.textSecondary,
                   height: 1.35,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              Text(
+                'National ID / Iqama',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: GateFlowColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
               TextFormField(
                 controller: _model.textController1,
                 focusNode: _model.textFieldFocusNode1,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Enter ID number',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              FFButtonWidget(
+                onPressed: () => _lookupById(mock),
+                text: 'Verify by ID',
+                options: FFButtonOptions(
+                  width: double.infinity,
+                  height: 46,
+                  color: GateFlowColors.brandAccent,
+                  textStyle: GoogleFonts.inter(
+                    color: GateFlowColors.brandPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Phone number',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: GateFlowColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _model.textController2,
+                focusNode: _model.textFieldFocusNode2,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  hintText: '+9665XXXXXXXX',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              FFButtonWidget(
+                onPressed: () => _lookupByPhone(mock),
+                text: 'Verify by phone',
+                options: FFButtonOptions(
+                  width: double.infinity,
+                  height: 46,
+                  color: GateFlowColors.surface,
+                  textStyle: GoogleFonts.inter(
+                    color: GateFlowColors.brandPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  borderSide: const BorderSide(color: GateFlowColors.divider),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              if (_lookupResult != null) ...[
+                const SizedBox(height: 22),
+                _PersonResultCard(profile: _lookupResult!),
+              ],
+              const SizedBox(height: 28),
+              const Divider(height: 32),
+              Text(
+                'Approved pickup queue',
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _model.textController3,
+                focusNode: _model.textFieldFocusNode3,
                 onChanged: (_) => safeSetState(() {}),
                 decoration: InputDecoration(
                   hintText: 'Search guardian or student…',
@@ -135,57 +334,27 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        BorderSide(color: GateFlowColors.divider, width: 1),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        BorderSide(color: GateFlowColors.divider, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                        color: GateFlowColors.brandPrimary.withValues(alpha: .45),
-                        width: 1.3),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              if (_filtered(mock, query).isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: GateFlowColors.divider),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.inbox_outlined,
-                          size: 32, color: GateFlowColors.textTertiary),
-                      const SizedBox(height: 10),
-                      Text(
-                        mock.approvedParentRequestsAwaitingPickup().isEmpty &&
-                                mock.requests
-                                    .where((r) =>
-                                        r.status == RequestStatus.approved)
-                                    .isNotEmpty
-                            ? 'All approved pickups are already released.'
-                            : 'No approved pickup request found.',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: GateFlowColors.textSecondary,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
+              const SizedBox(height: 14),
+              if (_filteredQueue(mock, queueQ).isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    mock.approvedParentRequestsAwaitingPickup().isEmpty &&
+                            mock.requests
+                                .where((r) => r.status == RequestStatus.approved)
+                                .isNotEmpty
+                        ? 'All approved pickups are already released.'
+                        : 'No approved pickup request found.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      color: GateFlowColors.textSecondary,
+                    ),
                   ),
                 ),
-              ..._filtered(mock, query).map((r) => Padding(
+              ..._filteredQueue(mock, queueQ).map((r) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Material(
                       color: Colors.white,
@@ -193,7 +362,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () => setState(() {
-                          _selected = r;
+                          _queueSelected = r;
                           _mockScanPositive = null;
                         }),
                         child: Container(
@@ -207,7 +376,8 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       mock.demoChildName(r.studentId),
@@ -219,8 +389,10 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                                     Text(
                                       r.type,
                                       style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          color: GateFlowColors.textSecondary),
+                                        fontSize: 12,
+                                        color:
+                                            GateFlowColors.textSecondary,
+                                      ),
                                     ),
                                     const SizedBox(height: 8),
                                     _reqPill(r.status),
@@ -228,10 +400,10 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                                 ),
                               ),
                               Icon(
-                                _selected?.id == r.id
+                                _queueSelected?.id == r.id
                                     ? Icons.radio_button_checked
                                     : Icons.radio_button_off,
-                                color: _selected?.id == r.id
+                                color: _queueSelected?.id == r.id
                                     ? GateFlowColors.brandPrimary
                                     : GateFlowColors.divider,
                               ),
@@ -241,10 +413,10 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                       ),
                     ),
                   )),
-              if (_selected != null) ...[
+              if (_queueSelected != null) ...[
                 const SizedBox(height: 14),
                 Text(
-                  'Scan & confirm',
+                  'Confirm pickup person',
                   style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w700, fontSize: 16),
                 ),
@@ -283,7 +455,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Simulate reading the pickup person’s QR. Invalid scans stop before release.',
+                        'Simulate reading the pickup person’s QR for the selected queue row.',
                         style: GoogleFonts.inter(
                           color: Colors.white.withValues(alpha: 0.92),
                           fontSize: 12.8,
@@ -348,7 +520,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const StatusPill(
-                          label: 'Verified guardian',
+                          label: 'Verified',
                           tone: StatusTone.success,
                           icon: Icons.verified_rounded,
                         ),
@@ -361,7 +533,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                           ),
                         ),
                         Text(
-                          'Authorized pickup for ${mock.demoChildName(_selected!.studentId)}',
+                          'Authorized pickup for ${mock.demoChildName(_queueSelected!.studentId)}',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: GateFlowColors.textSecondary,
@@ -369,7 +541,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '${_selected!.type} · ${_selected!.timeLabel ?? '—'}',
+                          '${_queueSelected!.type} · ${_queueSelected!.timeLabel ?? '—'}',
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13.5,
@@ -379,7 +551,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                         FFButtonWidget(
                           onPressed: () {
                             final ok = mock.releaseStudentAfterVerification(
-                                _selected!.id);
+                                _queueSelected!.id);
                             if (!ok || !mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -388,7 +560,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                                     borderRadius: BorderRadius.circular(12)),
                                 backgroundColor: GateFlowColors.success,
                                 content: Text(
-                                  'Student released · ${_selected!.type} marked complete.',
+                                  'Student released · ${_queueSelected!.type} marked complete.',
                                   style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600),
@@ -396,7 +568,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                               ),
                             );
                             setState(() {
-                              _selected = null;
+                              _queueSelected = null;
                               _mockScanPositive = null;
                             });
                           },
@@ -455,4 +627,128 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
       ),
     );
   }
+}
+
+class _PersonResultCard extends StatelessWidget {
+  const _PersonResultCard({required this.profile});
+
+  final GatePickupPersonProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final kindLabel =
+        profile.kind == GatePickupPersonKind.parent ? 'Parent' : 'Guardian';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: GateFlowColors.divider),
+        boxShadow: const [
+          BoxShadow(color: Color(0x0F0C3451), blurRadius: 14, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          StatusPill(
+            label: kindLabel,
+            tone: profile.kind == GatePickupPersonKind.parent
+                ? StatusTone.info
+                : StatusTone.approved,
+            icon: Icons.badge_rounded,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            profile.fullName,
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'ID · ${profile.nationalId}',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: GateFlowColors.textSecondary,
+            ),
+          ),
+          Text(
+            'Phone · ${profile.displayPhone}',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: GateFlowColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Linked children',
+            style: GoogleFonts.inter(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: GateFlowColors.textTertiary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            profile.linkedChildren.join(', '),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            profile.authorizationLabel,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: GateFlowColors.success,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Allowed: ${profile.allowedActionLabel}',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: GateFlowColors.brandPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScanFramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(size.width * 0.18, size.height * 0.22,
+        size.width * 0.64, size.height * 0.42);
+    final paint = Paint()
+      ..color = GateFlowColors.brandAccent
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    const corner = 28.0;
+    final path = Path()
+      ..moveTo(rect.left, rect.top + corner)
+      ..lineTo(rect.left, rect.top)
+      ..lineTo(rect.left + corner, rect.top)
+      ..moveTo(rect.right - corner, rect.top)
+      ..lineTo(rect.right, rect.top)
+      ..lineTo(rect.right, rect.top + corner)
+      ..moveTo(rect.right, rect.bottom - corner)
+      ..lineTo(rect.right, rect.bottom)
+      ..lineTo(rect.right - corner, rect.bottom)
+      ..moveTo(rect.left + corner, rect.bottom)
+      ..lineTo(rect.left, rect.bottom)
+      ..lineTo(rect.left, rect.bottom - corner);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

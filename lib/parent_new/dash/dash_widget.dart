@@ -6,7 +6,11 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
+import '../../shared/child_card.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
+import '../../shared/status_pill.dart';
+import '../../shared/student_status_helpers.dart';
 import 'dash_model.dart';
 
 export 'dash_model.dart';
@@ -56,6 +60,7 @@ class _DashWidgetState extends State<DashWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(
@@ -68,6 +73,10 @@ class _DashWidgetState extends State<DashWidget> {
                 onPressed: () =>
                     context.pushNamed(SelectChildForRequestWidget.routeName),
               ),
+              const SizedBox(height: 22),
+              const _SectionTitle(title: 'My Children'),
+              const SizedBox(height: 10),
+              _MyChildrenSection(mockState: mockState),
               const SizedBox(height: 22),
               const _SectionTitle(title: 'Family'),
               const SizedBox(height: 10),
@@ -341,6 +350,65 @@ class _SectionTitle extends StatelessWidget {
         fontWeight: FontWeight.w700,
         color: GateFlowColors.brandPrimary,
       ),
+    );
+  }
+}
+
+class _MyChildrenSection extends StatelessWidget {
+  const _MyChildrenSection({required this.mockState});
+
+  final MockState mockState;
+
+  static const _emo = ['🧒', '👧', '🧒', '👧'];
+  static const _tint = [
+    Color(0xFFE8F4FD),
+    Color(0xFFFFE9E9),
+    Color(0xFFE6F4EA),
+    Color(0xFFFCE4EC),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final children = mockState.parentDemoChildren;
+    if (children.isEmpty) {
+      return Text(
+        'No children added (mock).',
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: GateFlowColors.textSecondary,
+        ),
+      );
+    }
+    return Column(
+      children: List.generate(children.length, (i) {
+        final c = children[i];
+        final linked = mockState.studentMatchingDemoChild(c);
+        final isBus = c.transport == DemoChildTransport.bus;
+        return Padding(
+          padding: EdgeInsets.only(bottom: i == children.length - 1 ? 0 : 12),
+          child: ChildCard(
+            name: c.name,
+            grade: c.grade,
+            transport: isBus ? ChildTransport.bus : ChildTransport.car,
+            emoji: _emo[i % _emo.length],
+            avatarTint: _tint[i % _tint.length],
+            absentToday: c.absentToday,
+            onAbsentTodayChanged: (v) =>
+                context.read<MockState>().toggleChildAbsent(c.id, v),
+            statusBadge: linked != null
+                ? statusPillForSchoolStudent(linked)
+                : const StatusPill(
+                    label: 'Status unavailable',
+                    tone: StatusTone.neutral,
+                  ),
+            onTap: () {
+              context.pushNamed(
+                isBus ? BusWidget.routeName : CarWidget.routeName,
+              );
+            },
+          ),
+        );
+      }),
     );
   }
 }

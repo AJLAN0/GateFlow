@@ -105,6 +105,35 @@ class PendingGuardianInvite {
 
 enum GuardianInviteStatus { pending, approvedBySchool }
 
+/// Guardian-declared intent for an assigned child (mock gate coordination).
+enum GuardianPickupIntent { none, pick, drop }
+
+/// Person type returned by gate verification lookup (mock directory).
+enum GatePickupPersonKind { parent, guardian }
+
+/// Mock profile used by [MockState.lookupGatePickupPerson].
+class GatePickupPersonProfile {
+  const GatePickupPersonProfile({
+    required this.nationalId,
+    required this.phoneDigits,
+    required this.displayPhone,
+    required this.fullName,
+    required this.kind,
+    required this.linkedChildren,
+    required this.authorizationLabel,
+    required this.allowedActionLabel,
+  });
+
+  final String nationalId;
+  final String phoneDigits;
+  final String displayPhone;
+  final String fullName;
+  final GatePickupPersonKind kind;
+  final List<String> linkedChildren;
+  final String authorizationLabel;
+  final String allowedActionLabel;
+}
+
 class Student {
   Student({
     required this.id,
@@ -353,8 +382,99 @@ class MockState extends ChangeNotifier {
 
   PendingGuardianInvite? latestGuardianSubmission;
 
+  /// Demo directory for staff gate verification (ID / phone lookup).
+  final List<GatePickupPersonProfile> gatePickupDirectory = [
+    const GatePickupPersonProfile(
+      nationalId: '1234567890',
+      phoneDigits: '966501112233',
+      displayPhone: '+966 50 111 2233',
+      fullName: 'Khalid Al-Otaibi',
+      kind: GatePickupPersonKind.parent,
+      linkedChildren: ['Noah Khaled', 'Lama Khaled'],
+      authorizationLabel: 'Verified parent · Active',
+      allowedActionLabel: 'Pickup & drop-off',
+    ),
+    const GatePickupPersonProfile(
+      nationalId: '9876543210',
+      phoneDigits: '96650004411',
+      displayPhone: '+966 50 000 4411',
+      fullName: 'Mohammed Ali',
+      kind: GatePickupPersonKind.guardian,
+      linkedChildren: ['Saad Khaled', 'Sara Khaled'],
+      authorizationLabel: 'Verified guardian · School approved',
+      allowedActionLabel: 'Pickup only (mock)',
+    ),
+    const GatePickupPersonProfile(
+      nationalId: '5555555555',
+      phoneDigits: '966551234567',
+      displayPhone: '+966 55 123 4567',
+      fullName: 'Fatima Hassan',
+      kind: GatePickupPersonKind.parent,
+      linkedChildren: ['Khalid Jr.'],
+      authorizationLabel: 'Verified parent',
+      allowedActionLabel: 'Pickup & drop-off',
+    ),
+  ];
+
+  /// Per demo child id (`pc1`…): last guardian intent at gate (mock).
+  final Map<String, GuardianPickupIntent> guardianPickupIntentByChildId = {};
+
   /// Guardian profile screen toggles (mock).
   bool guardianNotifyEnabled = true;
+
+  static String normalizeDigits(String raw) =>
+      raw.replaceAll(RegExp(r'\D'), '');
+
+  bool isGuardianAssignedChild(DemoParentChild c) =>
+      guardianProfile.assignedChildNames.contains(c.name);
+
+  List<DemoParentChild> guardianLinkedDemoChildren() =>
+      parentDemoChildren.where(isGuardianAssignedChild).toList();
+
+  Student? studentMatchingDemoChild(DemoParentChild c) {
+    try {
+      return students.firstWhere((s) => s.name == c.name);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  GatePickupPersonProfile? lookupGatePickupPersonByNationalId(String raw) {
+    final q = raw.trim();
+    if (q.isEmpty) return null;
+    for (final p in gatePickupDirectory) {
+      if (p.nationalId == q) return p;
+    }
+    return null;
+  }
+
+  GatePickupPersonProfile? lookupGatePickupPersonByPhone(String raw) {
+    final d = normalizeDigits(raw);
+    if (d.isEmpty) return null;
+    for (final p in gatePickupDirectory) {
+      if (p.phoneDigits == d || d.endsWith(p.phoneDigits) || p.phoneDigits.endsWith(d)) {
+        return p;
+      }
+    }
+    return null;
+  }
+
+  void setGuardianPickupIntent(String demoChildId, GuardianPickupIntent intent) {
+    guardianPickupIntentByChildId[demoChildId] = intent;
+    notifyListeners();
+  }
+
+  GuardianPickupIntent guardianPickupIntentFor(String demoChildId) =>
+      guardianPickupIntentByChildId[demoChildId] ?? GuardianPickupIntent.none;
+
+  bool studentHasPendingPickupRequest(Student s) {
+    for (final r in requests) {
+      if (r.status != RequestStatus.pending) continue;
+      if (r.studentId == s.id) return true;
+      if (demoChildName(r.studentId) == s.name) return true;
+    }
+    return false;
+  }
 
   void setGuardianNotifyEnabled(bool value) {
     guardianNotifyEnabled = value;

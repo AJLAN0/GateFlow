@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../../data/mock_state.dart';
+import '../../../../../shared/gateflow_mock_map.dart';
 import 'student_add_model.dart';
 export 'student_add_model.dart';
 
@@ -28,10 +29,21 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  List<String> _busNameOptions = [];
+  String _locationSummary = 'North campus · Gate B (mock)';
+
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => StudentAddModel());
+
+    _busNameOptions =
+        List<String>.from(context.read<MockState>().buses.map((b) => b.name));
+
+    _model.dropDownGenderValueController ??= FormFieldController<String>(null);
+    _model.dropDownGradeValueController ??= FormFieldController<String>(null);
+    _model.dropDownTransValueController ??= FormFieldController<String>(null);
+    _model.dropDownBusNoValueController ??= FormFieldController<String>(null);
 
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
@@ -44,6 +56,15 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
 
     _model.textController4 ??= TextEditingController();
     _model.textFieldFocusNode4 ??= FocusNode();
+
+    _model.textController5 ??= TextEditingController();
+    _model.textFieldFocusNode5 ??= FocusNode();
+    _model.textController6 ??= TextEditingController();
+    _model.textFieldFocusNode6 ??= FocusNode();
+    _model.textController7 ??= TextEditingController();
+    _model.textFieldFocusNode7 ??= FocusNode();
+    _model.textController8 ??= TextEditingController();
+    _model.textFieldFocusNode8 ??= FocusNode();
   }
 
   @override
@@ -703,11 +724,14 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                   ),
                                   FlutterFlowDropDown<String>(
                                     controller:
-                                        _model.dropDownTransValueController ??=
-                                            FormFieldController<String>(null),
+                                        _model.dropDownTransValueController!,
                                     options: ['School Bus', 'Private Car'],
-                                    onChanged: (val) => safeSetState(
-                                        () => _model.dropDownTransValue = val),
+                                    onChanged: (val) => safeSetState(() {
+                                      _model.dropDownTransValue = val;
+                                      _model.dropDownBusNoValue = null;
+                                      _model.dropDownBusNoValueController
+                                          ?.value = null;
+                                    }),
                                     width: double.infinity,
                                     height: 52.0,
                                     textStyle: FlutterFlowTheme.of(context)
@@ -803,14 +827,8 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                               .fromSTEB(0.0, 6.0, 0.0, 0.0),
                                           child: FlutterFlowDropDown<String>(
                                             controller: _model
-                                                    .dropDownBusNoValueController ??=
-                                                FormFieldController<String>(
-                                                    null),
-                                            options: context
-                                                .watch<MockState>()
-                                                .buses
-                                                .map((b) => b.name)
-                                                .toList(),
+                                                .dropDownBusNoValueController!,
+                                            options: _busNameOptions,
                                             onChanged: (val) => safeSetState(
                                                 () => _model
                                                     .dropDownBusNoValue = val),
@@ -873,6 +891,201 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                             isOverButton: false,
                                             isSearchable: false,
                                             isMultiSelect: false,
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment:
+                                              AlignmentDirectional(-1.0, 0.0),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 16.0),
+                                            child: Text(
+                                              'Route *',
+                                              style: FlutterFlowTheme.of(
+                                                      context)
+                                                  .titleSmall
+                                                  .override(
+                                                    font: GoogleFonts.interTight(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontStyle:
+                                                          FlutterFlowTheme.of(
+                                                                  context)
+                                                              .titleSmall
+                                                              .fontStyle,
+                                                    ),
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsetsDirectional
+                                              .fromSTEB(0.0, 6.0, 0.0, 0.0),
+                                          child: TextFormField(
+                                            controller: _model.textController5,
+                                            focusNode:
+                                                _model.textFieldFocusNode5,
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'e.g. North Route · Zones A–D',
+                                              filled: true,
+                                              fillColor:
+                                                  FlutterFlowTheme.of(context)
+                                                      .primaryBackground,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.all(14),
+                                            ),
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment:
+                                              AlignmentDirectional(-1.0, 0.0),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 14.0),
+                                            child: Text(
+                                              'Pickup location *',
+                                              style: FlutterFlowTheme.of(
+                                                      context)
+                                                  .titleSmall
+                                                  .override(
+                                                    font: GoogleFonts.interTight(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsetsDirectional
+                                              .fromSTEB(0.0, 6.0, 0.0, 0.0),
+                                          child: TextFormField(
+                                            controller: _model.textController6,
+                                            focusNode:
+                                                _model.textFieldFocusNode6,
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'e.g. Zone D · Corner of King Rd',
+                                              filled: true,
+                                              fillColor:
+                                                  FlutterFlowTheme.of(context)
+                                                      .primaryBackground,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.all(14),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  if (_model.dropDownTransValue ==
+                                      'Private Car')
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Divider(
+                                          height: 24.0,
+                                          thickness: 1.0,
+                                          color:
+                                              FlutterFlowTheme.of(context)
+                                                  .alternate,
+                                        ),
+                                        Align(
+                                          alignment:
+                                              AlignmentDirectional(-1.0, 0.0),
+                                          child: Text(
+                                            'Pickup gate *',
+                                            style: FlutterFlowTheme.of(context)
+                                                .titleSmall
+                                                .override(
+                                                  font: GoogleFonts.interTight(
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsetsDirectional
+                                                  .fromSTEB(
+                                                  0.0, 6.0, 0.0, 0.0),
+                                          child: TextFormField(
+                                            controller:
+                                                _model.textController7,
+                                            focusNode:
+                                                _model.textFieldFocusNode7,
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'e.g. Gate 3 · Visitor lane',
+                                              filled: true,
+                                              fillColor:
+                                                  FlutterFlowTheme.of(context)
+                                                      .primaryBackground,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.all(14),
+                                            ),
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment:
+                                              AlignmentDirectional(-1.0, 0.0),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 14.0),
+                                            child: Text(
+                                              'Pickup notes',
+                                              style: FlutterFlowTheme.of(
+                                                      context)
+                                                  .titleSmall
+                                                  .override(
+                                                    font: GoogleFonts.interTight(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsetsDirectional
+                                                  .fromSTEB(
+                                                  0.0, 6.0, 0.0, 0.0),
+                                          child: TextFormField(
+                                            controller:
+                                                _model.textController8,
+                                            focusNode:
+                                                _model.textFieldFocusNode8,
+                                            maxLines: 3,
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'Parent / guardian pickup instructions',
+                                              filled: true,
+                                              fillColor:
+                                                  FlutterFlowTheme.of(context)
+                                                      .primaryBackground,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.all(14),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -1073,6 +1286,18 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                     color:
                                         FlutterFlowTheme.of(context).alternate,
                                   ),
+                                  GateFlowMiniLocationMap(
+                                    selectedLabel: _locationSummary,
+                                    onUpdateLocation: () => safeSetState(() {
+                                      final t = TimeOfDay.now()
+                                          .format(context);
+                                      _locationSummary =
+                                          'Pinned · Sector 4 · updated $t (mock)';
+                                      _model.textController4?.text =
+                                          _locationSummary;
+                                    }),
+                                  ),
+                                  const SizedBox(height: 16),
                                   Text(
                                     'Location (GPS) *',
                                     style: FlutterFlowTheme.of(context)

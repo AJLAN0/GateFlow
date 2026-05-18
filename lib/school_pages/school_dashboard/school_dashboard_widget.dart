@@ -7,6 +7,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/school_pages/parent_verification/parent_verification_widget.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'school_dashboard_model.dart';
 
 export 'school_dashboard_model.dart';
@@ -66,6 +67,7 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(

@@ -68,67 +68,9 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
     _applyOutcome(o);
   }
 
-  Future<void> _openManualPicker(MockState mock) async {
-    final students = _assigned(mock);
-    if (students.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No students assigned on this route (mock).'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    final picked = await showModalBottomSheet<Student>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Text(
-                'Manual entry · select student',
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: GateFlowColors.textPrimary,
-                ),
-              ),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: students
-                    .map(
-                      (s) => ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: GateFlowColors.brandPrimary,
-                          child: Text(
-                            s.name.isNotEmpty ? s.name[0] : '?',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        title: Text(s.name,
-                            style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                            '${s.grade} · ${_statusReadable(s.status)} · ${s.lastMockUpdateLabel}'),
-                        onTap: () => Navigator.pop(ctx, s),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (picked != null) _simulateScanFor(mock, picked);
+  Future<void> _openManualPicker(BuildContext context) async {
+    if (!context.mounted) return;
+    context.pushNamed(AssignedStudentslistWidget.routeName);
   }
 
   String _statusReadable(StudentStatus s) {
@@ -201,7 +143,7 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
                     }
                     _simulateScanFor(mock, s);
                   },
-                  onManual: () => _openManualPicker(mock),
+                  onManual: () => _openManualPicker(context),
                 ),
         ),
       ),
@@ -344,7 +286,7 @@ class _CameraPane extends StatelessWidget {
               onPressed: onManual,
               icon: const Icon(Icons.edit_note_rounded, size: 20),
               label: Text(
-                'Manual entry',
+                'Manual Scan',
                 style: GoogleFonts.inter(
                   fontWeight: FontWeight.w700,
                 ),

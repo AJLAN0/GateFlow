@@ -7,6 +7,9 @@ import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/child_card.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
+import '../../shared/status_pill.dart';
+import '../../shared/student_status_helpers.dart';
 import 'view_childern_model.dart';
 
 export 'view_childern_model.dart';
@@ -55,6 +58,7 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'children'),
         appBar: AppBar(
           backgroundColor: GateFlowColors.brandPrimary,
           elevation: 0,
@@ -86,6 +90,7 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
               ...List.generate(children.length, (i) {
                 final c = children[i];
                 final isBus = c.transport == DemoChildTransport.bus;
+                final linked = mock.studentMatchingDemoChild(c);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: ChildCard(
@@ -99,6 +104,12 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
                     onAbsentTodayChanged: (v) {
                       context.read<MockState>().toggleChildAbsent(c.id, v);
                     },
+                    statusBadge: linked != null
+                        ? statusPillForSchoolStudent(linked)
+                        : const StatusPill(
+                            label: 'No live status',
+                            tone: StatusTone.neutral,
+                          ),
                     onTap: () {
                       context.pushNamed(
                         isBus ? BusWidget.routeName : CarWidget.routeName,
@@ -126,7 +137,7 @@ class _SummaryHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [GateFlowColors.brandPrimary, GateFlowColors.brandPrimarySoft],

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
 import '../request_status/request_status_widget.dart';
 import 'parent_requests_list_model.dart';
 
@@ -58,6 +59,7 @@ class _ParentRequestsListWidgetState extends State<ParentRequestsListWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'requests'),
         appBar: AppBar(
           backgroundColor: GateFlowColors.brandPrimary,
           elevation: 0,

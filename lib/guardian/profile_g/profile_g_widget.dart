@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
 import '../../shared/sign_out_tile.dart';
 import '../../shared/status_pill.dart';
 import 'profile_g_model.dart';
@@ -64,6 +65,7 @@ class _ProfileGWidgetState extends State<ProfileGWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'profile'),
         appBar: AppBar(
           elevation: 0,
           backgroundColor: GateFlowColors.brandPrimary,

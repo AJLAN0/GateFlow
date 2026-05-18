@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../shared/sign_out_tile.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'admin_profile_model.dart';
 export 'admin_profile_model.dart';
 
@@ -49,6 +50,7 @@ class _AdminProfileWidgetState extends State<AdminProfileWidget> {
       child: Scaffold(
         key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        bottomNavigationBar: const RoleBottomNav(current: 'profile'),
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),
           automaticallyImplyLeading: false,

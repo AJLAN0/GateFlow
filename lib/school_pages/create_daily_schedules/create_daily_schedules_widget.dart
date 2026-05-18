@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../shared/gateflow_mock_map.dart';
 import 'create_daily_schedules_model.dart';
 export 'create_daily_schedules_model.dart';
 
@@ -28,6 +29,8 @@ class _CreateDailySchedulesWidgetState
   late CreateDailySchedulesModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String _pickupZoneLabel = 'Zone B · Cafeteria curb (mock)';
 
   @override
   void initState() {
@@ -142,6 +145,15 @@ class _CreateDailySchedulesWidgetState
                                 thickness: 1.0,
                                 color: FlutterFlowTheme.of(context).alternate,
                               ),
+                              GateFlowMiniLocationMap(
+                                selectedLabel: _pickupZoneLabel,
+                                onUpdateLocation: () => safeSetState(() {
+                                  final n = DateTime.now();
+                                  _pickupZoneLabel =
+                                      'Updated zone · ${n.hour}:${n.minute.toString().padLeft(2, '0')} (mock)';
+                                }),
+                              ),
+                              SizedBox(height: 16.0),
                               Column(
                                 mainAxisSize: MainAxisSize.max,
                                 crossAxisAlignment: CrossAxisAlignment.start,

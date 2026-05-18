@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
 import '../time_request_d/time_request_d_widget.dart';
 import 'time_request_model.dart';
 
@@ -54,6 +55,7 @@ class _TimeRequestWidgetState extends State<TimeRequestWidget>
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'requests'),
         appBar: AppBar(
           backgroundColor: GateFlowColors.brandPrimary,
           elevation: 0,

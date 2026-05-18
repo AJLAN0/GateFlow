@@ -6,7 +6,11 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
+import '../../shared/child_card.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
+import '../../shared/status_pill.dart';
+import '../../shared/student_status_helpers.dart';
 import 'dash_guardian_model.dart';
 
 export 'dash_guardian_model.dart';
@@ -54,6 +58,7 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(
@@ -64,6 +69,10 @@ class _DashGuardianWidgetState extends State<DashGuardianWidget> {
                 name: mockState.guardianProfile.fullName.split(' ').first,
                 pendingCount: pendingCount,
               ),
+              const SizedBox(height: 18),
+              const _GSectionTitle(title: 'Assigned children'),
+              const SizedBox(height: 10),
+              _GuardianDashChildrenStrip(mockState: mockState),
               const SizedBox(height: 22),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -238,6 +247,93 @@ class _GIconBtn extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _GuardianDashChildrenStrip extends StatelessWidget {
+  const _GuardianDashChildrenStrip({required this.mockState});
+
+  final MockState mockState;
+
+  static const _emo = ['🧒', '👧'];
+  static const _tint = [Color(0xFFE8F4FD), Color(0xFFFFE9E9)];
+
+  @override
+  Widget build(BuildContext context) {
+    final kids = mockState.guardianLinkedDemoChildren();
+    if (kids.isEmpty) {
+      return Text(
+        'No assigned children (mock).',
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: GateFlowColors.textSecondary,
+        ),
+      );
+    }
+    return Column(
+      children: List.generate(kids.length, (i) {
+        final c = kids[i];
+        final isBus = c.transport == DemoChildTransport.bus;
+        final linked = mockState.studentMatchingDemoChild(c);
+        final intent = mockState.guardianPickupIntentFor(c.id);
+        return Padding(
+          padding: EdgeInsets.only(bottom: i == kids.length - 1 ? 0 : 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ChildCard(
+                name: c.name,
+                grade: c.grade,
+                transport: isBus ? ChildTransport.bus : ChildTransport.car,
+                emoji: _emo[i % _emo.length],
+                avatarTint: _tint[i % _tint.length],
+                absentToday: c.absentToday,
+                allowAbsentToggle: false,
+                onAbsentTodayChanged: (_) {},
+                statusBadge: linked != null
+                    ? statusPillForSchoolStudent(linked)
+                    : const StatusPill(
+                        label: 'No live status',
+                        tone: StatusTone.neutral,
+                      ),
+                onTap: () {
+                  context.pushNamed(
+                    isBus ? BusGWidget.routeName : CarGWidget.routeName,
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      context.pushNamed(ViewChildernGWidget.routeName),
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  label: const Text('Pick / Drop actions'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: GateFlowColors.brandPrimary,
+                  ),
+                ),
+              ),
+              if (intent != GuardianPickupIntent.none)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    intent == GuardianPickupIntent.pick
+                        ? 'Logged intent: Pick'
+                        : 'Logged intent: Drop',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: GateFlowColors.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

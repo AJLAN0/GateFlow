@@ -9,6 +9,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/role_bottom_nav.dart';
 import '../../shared/status_pill.dart';
 import 'assigned_studentslist_model.dart';
 
@@ -129,12 +130,27 @@ class _AssignedStudentslistWidgetState
                 color: Colors.white, size: 26),
             onPressed: () => context.safePop(),
           ),
-          title: Text(
-            'Assigned students',
-            style: GoogleFonts.outfit(color: Colors.white, fontSize: 20),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Assigned students',
+                style: GoogleFonts.outfit(color: Colors.white, fontSize: 20),
+              ),
+              Text(
+                'Select Student Manually',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
           elevation: 0,
         ),
+        bottomNavigationBar: const RoleBottomNav(current: 'students'),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),

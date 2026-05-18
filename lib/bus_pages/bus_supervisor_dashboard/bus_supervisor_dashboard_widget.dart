@@ -7,6 +7,8 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/gateflow_mock_map.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'bus_supervisor_dashboard_model.dart';
 
 export 'bus_supervisor_dashboard_model.dart';
@@ -69,6 +71,7 @@ class _BusSupervisorDashboardWidgetState
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: GateFlowColors.surface,
+        bottomNavigationBar: const RoleBottomNav(current: 'home'),
         body: SafeArea(
           bottom: false,
           child: ListView(
@@ -335,7 +338,8 @@ class _RoutePreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pct = (completionPct.clamp(0.0, 1.0) * 100).round();
+    final routeProgress =
+        completionPct.clamp(0.0, 1.0); // fraction of route completed (mock)
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -343,180 +347,104 @@ class _RoutePreviewCard extends StatelessWidget {
         onTap: () =>
             context.pushNamed(BusStatusViewWidget.routeName),
         child: Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: GateFlowColors.divider),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F0C3451),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Route path (mock)',
-                style: GoogleFonts.outfit(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: GateFlowColors.textPrimary,
-                ),
-              ),
-              Text(
-                '$pct% drop-offs',
-                style: GoogleFonts.inter(
-                  fontSize: 12.5,
-                  color: GateFlowColors.brandPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: GateFlowColors.divider),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F0C3451),
+                blurRadius: 18,
+                offset: Offset(0, 6),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: [
-                  GateFlowColors.surface,
-                  GateFlowColors.brandPrimary.withValues(alpha: .08),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(color: GateFlowColors.divider),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _RouteStop(label: 'School', sub: 'Depart 2:40', active: false),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: SizedBox(
-                        height: 4,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            gradient: LinearGradient(
-                              colors: [
-                                GateFlowColors.brandPrimary,
-                                GateFlowColors.brandAccent,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                  Text(
+                    'Route map (mock)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: GateFlowColors.textPrimary,
                     ),
                   ),
-                  _RouteStop(label: 'North A', sub: 'Stop 3', active: true),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: SizedBox(
-                        height: 4,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: GateFlowColors.divider,
-                          ),
-                        ),
-                      ),
-                    ),
+                  Row(
+                    children: [
+                      _LegendDot(color: GateFlowColors.success, label: 'Start'),
+                      const SizedBox(width: 12),
+                      _LegendDot(color: GateFlowColors.danger, label: 'End'),
+                    ],
                   ),
-                  _RouteStop(label: 'Zone D', sub: 'Terminus', active: false),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            bus?.lastUpdateLabel ?? 'Last ping: just now (mock)',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: GateFlowColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+              const SizedBox(height: 6),
               Text(
-                'View full bus status',
+                'School → north zones · Live position is illustrative',
                 style: GoogleFonts.inter(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: GateFlowColors.brandPrimary,
+                  fontSize: 12,
+                  color: GateFlowColors.textSecondary,
                 ),
               ),
-              const Icon(Icons.open_in_new_rounded,
-                  size: 18, color: GateFlowColors.brandPrimary),
+              const SizedBox(height: 14),
+              GateFlowMockRouteMap(
+                progress: routeProgress,
+                height: 172,
+                routeLabel:
+                    bus?.lastUpdateLabel ?? 'GPS ping: mock · ${bus?.routeLabel ?? ''}',
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'View full bus status',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: GateFlowColors.brandPrimary,
+                    ),
+                  ),
+                  const Icon(Icons.open_in_new_rounded,
+                      size: 18, color: GateFlowColors.brandPrimary),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    ),
+        ),
       ),
     );
   }
 }
 
-class _RouteStop extends StatelessWidget {
-  const _RouteStop({
-    required this.label,
-    required this.sub,
-    required this.active,
-  });
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
 
+  final Color color;
   final String label;
-  final String sub;
-  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
       children: [
         Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color:
-                active ? GateFlowColors.brandPrimary : GateFlowColors.divider,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: const [
-              BoxShadow(color: Color(0x14000000), blurRadius: 4),
-            ],
-          ),
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(width: 6),
         Text(
           label,
           style: GoogleFonts.inter(
             fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: GateFlowColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            color: GateFlowColors.textSecondary,
           ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          sub,
-          style: GoogleFonts.inter(
-            fontSize: 9.5,
-            color: GateFlowColors.textTertiary,
-          ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
