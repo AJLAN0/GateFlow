@@ -100,22 +100,10 @@ class SchoolStudentRowCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  TextButton(
-                    onPressed: onOpenDetails,
-                    child: Text(
-                      'Details',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: GateFlowColors.brandPrimary,
-                      ),
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: GateFlowColors.textTertiary),
-                ],
+              const Padding(
+                padding: EdgeInsets.only(top: 10.0),
+                child: Icon(Icons.chevron_right_rounded,
+                    color: GateFlowColors.textTertiary),
               ),
             ],
           ),

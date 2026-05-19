@@ -6,7 +6,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../shared/gateflow_mock_map.dart';
 import 'manage_schedules_model.dart';
 export 'manage_schedules_model.dart';
 
@@ -25,8 +24,6 @@ class _ManageSchedulesWidgetState extends State<ManageSchedulesWidget>
   late ManageSchedulesModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  String _scheduleAreaSummary = 'East parking · lanes 1–2 (mock)';
 
   @override
   void initState() {
@@ -176,18 +173,6 @@ class _ManageSchedulesWidgetState extends State<ManageSchedulesWidget>
                                 shrinkWrap: true,
                                 scrollDirection: Axis.vertical,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
-                                    child: GateFlowMiniLocationMap(
-                                      selectedLabel: _scheduleAreaSummary,
-                                      onUpdateLocation: () =>
-                                          safeSetState(() {
-                                        final n = DateTime.now();
-                                        _scheduleAreaSummary =
-                                            'Pinned corridor · ${n.hour}:${n.minute.toString().padLeft(2, '0')} (mock)';
-                                      }),
-                                    ),
-                                  ),
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 8.0, 0.0, 8.0),
