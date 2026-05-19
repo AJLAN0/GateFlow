@@ -105,12 +105,7 @@ class RoleBottomNav extends StatelessWidget {
               icon: Icons.home_outlined,
               activeIcon: Icons.home_rounded,
               route: 'DashGuardian'),
-          _NavItem(
-              id: 'children',
-              label: 'Children',
-              icon: Icons.child_care_outlined,
-              activeIcon: Icons.child_care_rounded,
-              route: 'ViewChildernG'),
+
           _NavItem(
               id: 'profile',
               label: 'Profile',

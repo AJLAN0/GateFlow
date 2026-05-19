@@ -82,11 +82,7 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
-              _SummaryHeader(
-                total: children.length,
-                present: presentCount,
-              ),
-              const SizedBox(height: 16),
+
               ...List.generate(children.length, (i) {
                 final c = children[i];
                 final isBus = c.transport == DemoChildTransport.bus;
@@ -126,79 +122,3 @@ class _ViewChildernWidgetState extends State<ViewChildernWidget> {
   }
 }
 
-class _SummaryHeader extends StatelessWidget {
-  const _SummaryHeader({required this.total, required this.present});
-
-  final int total;
-  final int present;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [GateFlowColors.brandPrimary, GateFlowColors.brandPrimarySoft],
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.family_restroom_rounded,
-                color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Transport attendance',
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$present of $total expected for pickup today',
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: GateFlowColors.brandAccent,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              '$total kids',
-              style: GoogleFonts.inter(
-                color: GateFlowColors.brandPrimaryDark,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
