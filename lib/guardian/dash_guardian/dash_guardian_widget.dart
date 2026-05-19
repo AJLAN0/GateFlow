@@ -303,33 +303,7 @@ class _GuardianDashChildrenStrip extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () =>
-                      context.pushNamed(ViewChildernGWidget.routeName),
-                  icon: const Icon(Icons.edit_rounded, size: 18),
-                  label: const Text('Pick / Drop actions'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: GateFlowColors.brandPrimary,
-                  ),
-                ),
-              ),
-              if (intent != GuardianPickupIntent.none)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    intent == GuardianPickupIntent.pick
-                        ? 'Logged intent: Pick'
-                        : 'Logged intent: Drop',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: GateFlowColors.textSecondary,
-                    ),
-                  ),
-                ),
+
             ],
           ),
         );

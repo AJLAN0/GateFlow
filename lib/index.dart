@@ -103,8 +103,6 @@ export '/school_pages/student_status_view_bus_car/student_status_view_bus_car_wi
     show StudentStatusViewBusCarWidget;
 export '/parent_new/request_status/request_status_widget.dart'
     show RequestStatusWidget;
-export '/guardian/view_childern_g/view_childern_g_widget.dart'
-    show ViewChildernGWidget;
 export '/guardian/bus_g/bus_g_widget.dart' show BusGWidget;
 export '/guardian/car_g/car_g_widget.dart' show CarGWidget;
 export '/parent_new/parent_notifications/parent_notifications_widget.dart'

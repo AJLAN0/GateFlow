@@ -323,11 +323,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => RequestStatusWidget(),
         ),
         FFRoute(
-          name: ViewChildernGWidget.routeName,
-          path: ViewChildernGWidget.routePath,
-          builder: (context, params) => ViewChildernGWidget(),
-        ),
-        FFRoute(
           name: BusGWidget.routeName,
           path: BusGWidget.routePath,
           builder: (context, params) => BusGWidget(),
