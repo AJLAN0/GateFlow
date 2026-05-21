@@ -11,13 +11,19 @@ import 'index.dart';
 
 import 'package:provider/provider.dart';
 import 'data/mock_state.dart';
+import 'backend/supabase/supabase_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoRouter.optionURLReflectsImperativeAPIs = true;
   usePathUrlStrategy();
 
-  // await initFirebase(); // Firebase is ignored for the Mock prototype
+  // Initialize Supabase (skipped gracefully when URL is still placeholder)
+  if (isSupabaseConfigured) {
+    await initSupabase();
+  }
+
+  // await initFirebase(); // Firebase kept for future use
 
   runApp(
     ChangeNotifierProvider(
@@ -28,7 +34,6 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  // This widget is the root of your application.
   @override
   State<MyApp> createState() => _MyAppState();
 
@@ -41,6 +46,7 @@ class _MyAppState extends State<MyApp> {
 
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
+
   String getRoute([RouteMatch? routeMatch]) {
     final RouteMatch lastMatch =
         routeMatch ?? _router.routerDelegate.currentConfiguration.last;
@@ -54,12 +60,12 @@ class _MyAppState extends State<MyApp> {
       _router.routerDelegate.currentConfiguration.matches
           .map((e) => getRoute(e))
           .toList();
+
   @override
   void initState() {
     super.initState();
-
     _appStateNotifier = AppStateNotifier.instance;
-    _router = createRouter(_appStateNotifier);
+    _router           = createRouter(_appStateNotifier);
   }
 
   void setThemeMode(ThemeMode mode) => safeSetState(() {
@@ -70,7 +76,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'test',
+      title: 'GateFlow',
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
