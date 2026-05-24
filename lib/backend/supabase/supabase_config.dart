@@ -1,13 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Replace with your Supabase project credentials.
-/// Dashboard → Settings → API
-const String kSupabaseUrl     = 'https://orghflnphjkkxxnslxjd.supabase.co';
-const String kSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZ2hmbG5waGpra3h4bnNseGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTU5NTgsImV4cCI6MjA5NDc5MTk1OH0.HBCAIyhn7WSl5VBdfvmeGQx3CeNYE7K1qxll-_CJ6_0';
+/// Credentials are injected at build time via --dart-define-from-file=.env.json
+/// Never hardcode these values here — keep .env.json in .gitignore.
+///
+/// Run the app with:
+///   flutter run --dart-define-from-file=.env.json
+///
+/// Build with:
+///   flutter build web --dart-define-from-file=.env.json
+const String kSupabaseUrl =
+    String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+const String kSupabaseAnonKey =
+    String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
 
-/// Real credentials are configured — always true.
-/// Set to false manually to force offline/demo mode.
-const bool isSupabaseConfigured = true;
+const bool isSupabaseConfigured =
+    kSupabaseUrl.length > 0 && kSupabaseAnonKey.length > 0;
 
 Future<void> initSupabase() async {
   await Supabase.initialize(
