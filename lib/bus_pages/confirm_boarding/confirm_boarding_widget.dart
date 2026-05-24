@@ -48,8 +48,11 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
     super.dispose();
   }
 
-  List<Student> _assigned(MockState m) =>
-      m.students.where((s) => s.busId == 'b1').toList();
+  List<Student> _assigned(MockState m) {
+    final busId = m.currentDriverBusId;
+    if (busId == null || busId.isEmpty) return [];
+    return m.students.where((s) => s.busId == busId).toList();
+  }
 
   Student? _pickDefault(MockState m) {
     final list = _assigned(m);

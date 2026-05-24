@@ -34,7 +34,8 @@ class SignOutTile extends StatelessWidget {
     );
     if (confirmed != true) return;
     if (!context.mounted) return;
-    context.read<MockState>().loginAs(UserRole.none);
+    await context.read<MockState>().signOut();
+    if (!context.mounted) return;
     context.goNamed('Authentication');
   }
 

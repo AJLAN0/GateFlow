@@ -54,13 +54,15 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
   Widget build(BuildContext context) {
     final sid = GoRouterState.of(context).uri.queryParameters['sid'] ?? '';
     final mock = context.watch<MockState>();
+    final driverBusId = mock.currentDriverBusId ?? '';
     Student student;
     try {
       student = sid.isEmpty
-          ? mock.students.firstWhere((s) => (s.busId ?? '') == 'b1')
+          ? mock.students.firstWhere((s) => (s.busId ?? '') == driverBusId)
           : mock.students.firstWhere((s) => s.id == sid);
     } catch (_) {
-      student = mock.students.first;
+      student = mock.students.isNotEmpty ? mock.students.first : Student(
+        id: '', name: 'No student', grade: '', status: StudentStatus.atHome);
     }
 
     String labelStatus(StudentStatus s) {

@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/index.dart';
+import '../../backend/supabase/services/seed_service.dart';
+import '../../backend/supabase/supabase_config.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
 import 'authentication_model.dart';
@@ -27,6 +29,7 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
   late AuthenticationModel _model;
   final _formKey    = GlobalKey<FormState>();
   bool  _submitting = false;
+  bool  _seeding    = false;
 
   @override
   void initState() {
@@ -93,6 +96,45 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
     _navigateForRole(role);
   }
 
+  Future<void> _handleSeedAccounts() async {
+    setState(() => _seeding = true);
+    final results = await context.read<MockState>().seedDemoAccounts();
+    if (!mounted) return;
+    setState(() => _seeding = false);
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Demo Account Setup'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final line in results)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Text(line, style: const TextStyle(fontSize: 13)),
+                ),
+              const SizedBox(height: 12),
+              Text(
+                'Password for all accounts: ${kDemoPassword}',
+                style: const TextStyle(
+                    fontSize: 12, color: GateFlowColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final width  = MediaQuery.sizeOf(context).width;
@@ -134,16 +176,25 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
                                 ),
                               ],
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildLoginForm(),
-                                const SizedBox(height: 24),
-                                const Divider(
-                                    color: GateFlowColors.divider, height: 1),
-                                const SizedBox(height: 20),
-                                _buildDemoPicker(),
-                              ],
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildLoginForm(),
+                                  if (!isSupabaseConfigured) ...[
+                                    const SizedBox(height: 24),
+                                    const Divider(
+                                        color: GateFlowColors.divider, height: 1),
+                                    const SizedBox(height: 20),
+                                    _buildDemoPicker(),
+                                  ],
+                                  const SizedBox(height: 16),
+                                  const Divider(
+                                      color: GateFlowColors.divider, height: 1),
+                                  const SizedBox(height: 16),
+                                  _buildSeedSection(),
+                                ],
+                              ),
                             ),
                           )
                               .animate()
@@ -354,6 +405,85 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
     );
   }
 
+  Widget _buildSeedSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.manage_accounts_outlined,
+                size: 16, color: GateFlowColors.textSecondary),
+            const SizedBox(width: 6),
+            Text(
+              'Backend setup',
+              style: GoogleFonts.inter(
+                color:        GateFlowColors.textSecondary,
+                fontSize:     12,
+                fontWeight:   FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Creates one Supabase account per role if they don\'t exist yet. '
+          'All use the shared password: $kDemoPassword',
+          style: GoogleFonts.inter(
+            color:    GateFlowColors.textSecondary,
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _AccountRow(
+          email: 'parent@demo.gateflow.app',
+          label: 'Parent',
+          icon:  Icons.family_restroom_rounded,
+        ),
+        _AccountRow(
+          email: 'staff@demo.gateflow.app',
+          label: 'School Staff',
+          icon:  Icons.school_rounded,
+        ),
+        _AccountRow(
+          email: 'driver@demo.gateflow.app',
+          label: 'Bus Driver',
+          icon:  Icons.directions_bus_rounded,
+        ),
+        _AccountRow(
+          email: 'guardian@demo.gateflow.app',
+          label: 'Guardian',
+          icon:  Icons.shield_outlined,
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _seeding ? null : _handleSeedAccounts,
+            icon: _seeding
+                ? const SizedBox(
+                    width:  14,
+                    height: 14,
+                    child:  CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_upload_outlined, size: 16),
+            label: Text(
+              _seeding ? 'Creating accounts…' : 'Create demo accounts on Supabase',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GateFlowColors.brandPrimary,
+              side: const BorderSide(color: GateFlowColors.brandPrimary),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _demoChip(String label, IconData icon, UserRole role) {
     return InkWell(
       onTap:        () => _enterAs(role),
@@ -380,6 +510,50 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AccountRow extends StatelessWidget {
+  final String  email;
+  final String  label;
+  final IconData icon;
+
+  const _AccountRow({
+    required this.email,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: GateFlowColors.brandPrimary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize:   12,
+              fontWeight: FontWeight.w600,
+              color:      GateFlowColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              email,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color:    GateFlowColors.textSecondary,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

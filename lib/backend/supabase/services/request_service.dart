@@ -29,14 +29,13 @@ class RequestService {
     var query = supabase
         .from('pickup_requests')
         .select('*, students!inner(school_id)')
-        .eq('students.school_id', schoolId)
-        .order('created_at', ascending: false);
+        .eq('students.school_id', schoolId);
 
     if (statusFilter != null) {
       query = query.eq('status', statusFilter);
     }
 
-    final rows = await query;
+    final rows = await query.order('created_at', ascending: false);
     return rows.map(DbPickupRequest.fromJson).toList();
   }
 

@@ -27,14 +27,13 @@ class GuardianService {
     var query = supabase
         .from('guardians')
         .select('*, profiles!parent_id(school_id), guardian_students(student_id)')
-        .eq('profiles.school_id', schoolId)
-        .order('created_at', ascending: false);
+        .eq('profiles.school_id', schoolId);
 
     if (statusFilter != null) {
       query = query.eq('status', statusFilter);
     }
 
-    final rows = await query;
+    final rows = await query.order('created_at', ascending: false);
     return rows.map(DbGuardian.fromJson).toList();
   }
 

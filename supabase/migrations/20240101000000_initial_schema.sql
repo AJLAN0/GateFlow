@@ -271,7 +271,7 @@ CREATE TRIGGER tg_schedules_upd        BEFORE UPDATE ON daily_schedules   FOR EA
 -- AUTO-CREATE PROFILE ON SIGNUP
 -- =============================================================================
 CREATE OR REPLACE FUNCTION fn_handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name, role)
   VALUES (
@@ -326,15 +326,27 @@ ALTER TABLE driver_scan_logs       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gate_verification_logs ENABLE ROW LEVEL SECURITY;
 
 -- Helper: authenticated user's school_id
+-- SECURITY DEFINER prevents infinite RLS recursion (this fn queries profiles,
+-- which has policies that call this fn).
 CREATE OR REPLACE FUNCTION my_school_id()
-RETURNS UUID LANGUAGE sql STABLE AS $$
-  SELECT school_id FROM profiles WHERE id = auth.uid()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT school_id FROM profiles WHERE id = auth.uid();
 $$;
 
 -- Helper: authenticated user's role
 CREATE OR REPLACE FUNCTION my_role()
-RETURNS user_role LANGUAGE sql STABLE AS $$
-  SELECT role FROM profiles WHERE id = auth.uid()
+RETURNS user_role
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role FROM profiles WHERE id = auth.uid();
 $$;
 
 -- --- schools ---

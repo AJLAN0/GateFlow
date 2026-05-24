@@ -18,22 +18,32 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   usePathUrlStrategy();
 
-  // Initialize Supabase (skipped gracefully when URL is still placeholder)
+  // Initialize Supabase — guarded against hot-restart double-init on Flutter Web
+  // (Dart statics persist across hot restarts, so instance may already exist).
   if (isSupabaseConfigured) {
-    await initSupabase();
+    try {
+      await initSupabase();
+    } catch (_) {
+      // Already initialized — safe to continue.
+    }
   }
 
   // await initFirebase(); // Firebase kept for future use
 
+  final mockState = MockState();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => MockState(),
-      child: MyApp(),
+    ChangeNotifierProvider.value(
+      value: mockState,
+      child: MyApp(mockState: mockState),
     ),
   );
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key, required this.mockState});
+  final MockState mockState;
+
   @override
   State<MyApp> createState() => _MyAppState();
 
@@ -65,7 +75,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _appStateNotifier = AppStateNotifier.instance;
-    _router           = createRouter(_appStateNotifier);
+    _router           = createRouter(_appStateNotifier, widget.mockState);
   }
 
   void setThemeMode(ThemeMode mode) => safeSetState(() {

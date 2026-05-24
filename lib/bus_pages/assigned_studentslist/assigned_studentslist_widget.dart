@@ -91,8 +91,9 @@ class _AssignedStudentslistWidgetState
   Iterable<Student> _visible(MockState mock) {
     final q =
         (_model.textController?.text ?? '').trim().toLowerCase();
+    final driverBusId = mock.currentDriverBusId ?? '';
     return mock.students.where((s) {
-      if ((s.busId ?? '') != 'b1') return false;
+      if ((s.busId ?? '') != driverBusId) return false;
       if (!_passesStatus(s)) return false;
       if (q.isEmpty) return true;
       final bundle = '${s.name} ${s.grade} ${s.id}'.toLowerCase();
@@ -201,7 +202,7 @@ class _AssignedStudentslistWidgetState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '${list.length} rider${list.length == 1 ? '' : 's'} on Bus 12A',
+                  '${list.length} rider${list.length == 1 ? '' : 's'} on ${mock.buses.where((b) => b.id == mock.currentDriverBusId).map((b) => b.name).firstOrNull ?? 'your bus'}',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,

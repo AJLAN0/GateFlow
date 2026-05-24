@@ -12,6 +12,7 @@ import '../backend/supabase/services/guardian_service.dart';
 import '../backend/supabase/services/operational_alert_service.dart';
 import '../backend/supabase/services/driver_service.dart';
 import '../backend/supabase/services/notification_service.dart';
+import '../backend/supabase/services/seed_service.dart';
 
 // =============================================================================
 // Enums (UI-layer, unchanged)
@@ -246,13 +247,16 @@ class MockState extends ChangeNotifier {
   List<OperationalAlert>     operationalAlerts   = [];
   List<DemoParentChild>      parentDemoChildren  = [];
 
+  /// Real bus ID for the signed-in bus driver (null for other roles / demo).
+  String? currentDriverBusId;
+
   GuardianDemoProfile guardianProfile = const GuardianDemoProfile(
-    fullName:           'Mohammed Ali',
-    phone:              '+966 50 000 4411',
-    email:              'm.ali.demo@gateflow.app',
-    relationship:       'Uncle · Authorized guardian',
-    authorizationNote:  'Active · Verified by school',
-    assignedChildNames: ['Saad Khaled', 'Sara Khaled'],
+    fullName:           '',
+    phone:              '',
+    email:              '',
+    relationship:       '',
+    authorizationNote:  '',
+    assignedChildNames: [],
   );
 
   PendingGuardianInvite? latestGuardianSubmission;
@@ -298,20 +302,25 @@ class MockState extends ChangeNotifier {
 
   // ── Constructor ───────────────────────────────────────────────────────────
   MockState() {
-    _loadDemoData();
     if (isSupabaseConfigured) {
+      _clearData();
       _initSupabase();
+    } else {
+      _loadDemoData();
     }
   }
 
   // ── Supabase initialization ───────────────────────────────────────────────
+  bool _manualSignInInProgress = false;
+
   void _initSupabase() {
     _authSub = supabase.auth.onAuthStateChange.listen((event) {
       supabaseUser = event.session?.user;
       if (supabaseUser != null) {
-        _onUserSignedIn();
+        // Skip if signInWithEmailPassword is already awaiting _onUserSignedIn.
+        if (!_manualSignInInProgress) _onUserSignedIn();
       } else {
-        _loadDemoData();
+        _clearData();
         _role = UserRole.none;
       }
       notifyListeners();
@@ -365,11 +374,11 @@ class MockState extends ChangeNotifier {
         case UserRole.parent:
           final dbStudents = await StudentService.instance
               .fetchForParent(parentId: profile.id);
-          students  = dbStudents.map(_mapStudent).toList();
+          students           = dbStudents.map(_mapStudent).toList();
           parentDemoChildren = dbStudents.map(_mapDemoChild).toList();
           break;
         case UserRole.guardian:
-          students = [];
+          // Guardian's linked students loaded below after fetching guardian record
           break;
         case UserRole.none:
           break;
@@ -383,6 +392,12 @@ class MockState extends ChangeNotifier {
             _role == UserRole.parent)) {
       final dbBuses = await BusService.instance.fetchAll(schoolId: schoolId);
       buses = dbBuses.map(_mapBus).toList();
+
+      // For bus driver: record which bus belongs to them
+      if (_role == UserRole.busDriver) {
+        final myBus = dbBuses.where((b) => b.driverId == profile.id).toList();
+        currentDriverBusId = myBus.isNotEmpty ? myBus.first.id : null;
+      }
     }
 
     // Load requests
@@ -395,10 +410,14 @@ class MockState extends ChangeNotifier {
       final dbRequests =
           await RequestService.instance.fetchBySchool(schoolId: schoolId);
       requests = dbRequests.map(_mapRequest).toList();
+
+      // Build student name lookup for time-request display
+      final nameById = Map.fromEntries(
+          students.map((s) => MapEntry(s.id, s.name)));
       schoolTimeRequests = dbRequests
           .where((r) =>
               r.type == 'Early Pickup' || r.type == 'Late Drop-off')
-          .map(_mapTimeRequest)
+          .map((r) => _mapTimeRequestWithName(r, nameById))
           .toList();
     }
 
@@ -415,6 +434,46 @@ class MockState extends ChangeNotifier {
                 createdAt: a.createdAt,
               ))
           .toList();
+    }
+
+    // Load guardian profile + linked students for guardian role
+    if (_role == UserRole.guardian) {
+      try {
+        final rows = await supabase
+            .from('guardians')
+            .select('*, guardian_students(student_id)')
+            .eq('guardian_user_id', profile.id)
+            .eq('status', 'approved');
+
+        if (rows.isNotEmpty) {
+          final g = DbGuardian.fromJson(rows.first as Map<String, dynamic>);
+
+          List<String> childNames = [];
+          if (g.studentIds.isNotEmpty) {
+            final studentRows = await supabase
+                .from('students')
+                .select()
+                .inFilter('id', g.studentIds);
+
+            final dbStudents =
+                (studentRows as List).map((r) => DbStudent.fromJson(r as Map<String, dynamic>)).toList();
+            childNames         = dbStudents.map((s) => s.name).toList();
+            parentDemoChildren = dbStudents.map(_mapDemoChild).toList();
+            students           = dbStudents.map(_mapStudent).toList();
+          }
+
+          guardianProfile = GuardianDemoProfile(
+            fullName:          g.fullName,
+            phone:             g.phone ?? '',
+            email:             g.email ?? profile.phone ?? '',
+            relationship:      g.relationship ?? 'Guardian',
+            authorizationNote: 'Active · Verified by school',
+            assignedChildNames: childNames,
+          );
+        }
+      } catch (e) {
+        debugPrint('GateFlow: error loading guardian profile: $e');
+      }
     }
   }
 
@@ -504,6 +563,26 @@ class MockState extends ChangeNotifier {
       OperationalAlert(id: 'a1', title: 'Bus 12A departure delayed',   body: 'North route running ~8 min behind. Gate team notified.', createdAt: DateTime.now()),
       OperationalAlert(id: 'a2', title: 'Early pickup spike',           body: '3 early dismissals clustered at 12:30 PM — monitor gate queue.', createdAt: DateTime.now()),
     ];
+  }
+
+  // ── Clear data (used when Supabase is configured & user is signed out) ────
+  void _clearData() {
+    students            = [];
+    buses               = [];
+    requests            = [];
+    schoolTimeRequests  = [];
+    operationalAlerts   = [];
+    parentDemoChildren  = [];
+    gatePickupDirectory = [];
+    currentDriverBusId  = null;
+    guardianProfile     = const GuardianDemoProfile(
+      fullName:           '',
+      phone:              '',
+      email:              '',
+      relationship:       '',
+      authorizationNote:  '',
+      assignedChildNames: [],
+    );
   }
 
   // ── DB → UI-model converters ──────────────────────────────────────────────
@@ -600,9 +679,13 @@ class MockState extends ChangeNotifier {
       );
 
   static SchoolTimeRequestEntry _mapTimeRequest(DbPickupRequest db) =>
+      _mapTimeRequestWithName(db, const {});
+
+  static SchoolTimeRequestEntry _mapTimeRequestWithName(
+      DbPickupRequest db, Map<String, String> nameById) =>
       SchoolTimeRequestEntry(
         id:          db.id,
-        childName:   db.studentId,
+        childName:   nameById[db.studentId] ?? db.studentId,
         grade:       '',
         reason:      db.notes ?? '',
         timeLabel:   db.timeLabel ?? '',
@@ -620,7 +703,12 @@ class MockState extends ChangeNotifier {
     }
     try {
       authError = null;
+      _manualSignInInProgress = true;
       await AuthService.instance.signIn(email: email, password: password);
+      // Auth listener fires async — load profile here so the caller
+      // receives the correct role immediately on return.
+      supabaseUser = supabase.auth.currentUser;
+      await _onUserSignedIn();
       return null;
     } on AuthException catch (e) {
       authError = e.message;
@@ -630,6 +718,8 @@ class MockState extends ChangeNotifier {
       authError = e.toString();
       notifyListeners();
       return e.toString();
+    } finally {
+      _manualSignInInProgress = false;
     }
   }
 
@@ -647,8 +737,18 @@ class MockState extends ChangeNotifier {
     supabaseUser    = null;
     currentProfile  = null;
     _role           = UserRole.none;
-    _loadDemoData();
+    _clearData();
     notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seed demo accounts (first-run setup)
+  // ---------------------------------------------------------------------------
+  Future<List<String>> seedDemoAccounts() async {
+    if (!isSupabaseConfigured) {
+      return ['Supabase is not configured — cannot seed accounts.'];
+    }
+    return SeedService.instance.seedDemoAccounts();
   }
 
   // Keep the original demo-mode login for the quick-access chips
@@ -866,7 +966,7 @@ class MockState extends ChangeNotifier {
 
     if (isSupabaseConfigured && currentProfile != null) {
       final action = prev == DriverScanPhase.idle ? 'boarded' : 'dropped_off';
-      final busId  = buses.isNotEmpty ? buses.first.id : null;
+      final busId  = currentDriverBusId ?? (buses.isNotEmpty ? buses.first.id : null);
       DriverService.instance.recordScan(
         driverId:  currentProfile!.id,
         studentId: studentId,

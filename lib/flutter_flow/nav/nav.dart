@@ -13,6 +13,8 @@ import '/flutter_flow/flutter_flow_util.dart';
 import 'serialization_util.dart';
 
 import '/index.dart';
+import '/data/mock_state.dart';
+import '/backend/supabase/supabase_config.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -35,12 +37,30 @@ class AppStateNotifier extends ChangeNotifier {
   }
 }
 
-GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
+GoRouter createRouter(
+  AppStateNotifier appStateNotifier,
+  MockState mockState,
+) =>
+    GoRouter(
       initialLocation: '/',
       debugLogDiagnostics: true,
-      refreshListenable: appStateNotifier,
+      refreshListenable: Listenable.merge([appStateNotifier, mockState]),
       navigatorKey: appNavigatorKey,
       errorBuilder: (context, state) => Container(),
+      redirect: (context, state) {
+        if (!isSupabaseConfigured) return null;
+        final path        = state.fullPath ?? '';
+        final publicPaths = {
+          '/',
+          AuthenticationWidget.routePath,
+          ForgotPasswordWidget.routePath,
+        };
+        if (publicPaths.contains(path)) return null;
+        if (mockState.currentUserRole == UserRole.none) {
+          return AuthenticationWidget.routePath;
+        }
+        return null;
+      },
       routes: [
         FFRoute(
           name: '_initialize',
