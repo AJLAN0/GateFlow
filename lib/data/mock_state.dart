@@ -646,6 +646,17 @@ class MockState extends ChangeNotifier {
     );
   }
 
+  // ── DB ↔ UI-model converters (public test surface; private originals
+  //     stay unchanged for everything else in the file) ─────────────────────
+  @visibleForTesting
+  static StudentStatus studentStatusFromDb(String s) => _studentStatusFromDb(s);
+  @visibleForTesting
+  static String studentStatusToDb(StudentStatus s) => _studentStatusToDb(s);
+  @visibleForTesting
+  static UserRole roleFromString(String r) => _roleFromString(r);
+  @visibleForTesting
+  UserRole inferRoleFromEmail(String email) => _inferRoleFromEmail(email);
+
   // ── DB → UI-model converters ──────────────────────────────────────────────
   static StudentStatus _studentStatusFromDb(String s) {
     switch (s) {
