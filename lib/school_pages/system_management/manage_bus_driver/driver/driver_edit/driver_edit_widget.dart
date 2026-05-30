@@ -7,8 +7,12 @@ import '/flutter_flow/form_field_controller.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../../backend/supabase/models/db_models.dart';
+import '../../../../../data/mock_state.dart';
+import '../driver_manage/driver_manage_widget.dart';
 import 'driver_edit_model.dart';
 export 'driver_edit_model.dart';
 
@@ -49,8 +53,104 @@ class _DriverEditWidgetState extends State<DriverEditWidget> {
     super.dispose();
   }
 
+  bool _saving = false;
+  bool _prefilled = false;
+  String? _driverId;
+
+  void _prefillFrom(DbProfile driver, MockState mock) {
+    if (_prefilled) return;
+    _prefilled = true;
+    _driverId = driver.id;
+    _model.textController1?.text = driver.fullName;
+    _model.textController2?.text = driver.nationalId ?? '';
+    _model.textController3?.text = driver.phone ?? '';
+    final busId = mock.busIdForDriver(driver.id);
+    if (busId != null) {
+      _model.dropDownValue2 = busId;
+      _model.dropDownValueController2 ??= FormFieldController<String>(busId);
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_saving || _driverId == null) return;
+    setState(() => _saving = true);
+    try {
+      final mock = context.read<MockState>();
+      await mock.updateProfileRecord(
+        id: _driverId!,
+        fullName: _model.textController1.text.trim(),
+        phone: _model.textController3.text.trim(),
+        nationalId: _model.textController2.text.trim(),
+      );
+      await mock.assignDriverToBus(
+        driverId: _driverId!,
+        busId: _model.dropDownValue2,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Driver updated.')),
+      );
+      context.goNamed(DriverManageWidget.routeName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not update driver: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _deactivateDriver() async {
+    if (_saving || _driverId == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Deactivate driver?'),
+        content: const Text(
+            'This driver will lose access and be unassigned from their bus.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Deactivate'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    setState(() => _saving = true);
+    try {
+      final mock = context.read<MockState>();
+      await mock.assignDriverToBus(driverId: _driverId!, busId: null);
+      await mock.deactivateProfile(_driverId!);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Driver deactivated.')),
+      );
+      context.goNamed(DriverManageWidget.routeName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not deactivate driver: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final buses = mock.buses;
+    final did = GoRouterState.of(context).uri.queryParameters['did'];
+    final driver = did != null ? mock.schoolProfileById(did) : null;
+    if (driver != null) _prefillFrom(driver, mock);
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -767,8 +867,12 @@ class _DriverEditWidgetState extends State<DriverEditWidget> {
                                       child: FlutterFlowDropDown<String>(
                                         controller: _model
                                                 .dropDownValueController2 ??=
-                                            FormFieldController<String>(null),
-                                        options: <String>[],
+                                            FormFieldController<String>(
+                                                _model.dropDownValue2),
+                                        options:
+                                            buses.map((b) => b.id).toList(),
+                                        optionLabels:
+                                            buses.map((b) => b.name).toList(),
                                         onChanged: (val) => safeSetState(
                                             () => _model.dropDownValue2 = val),
                                         width: double.infinity,
@@ -834,10 +938,8 @@ class _DriverEditWidgetState extends State<DriverEditWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Save Changes',
+                          onPressed: _saving ? null : () => _saveChanges(),
+                          text: _saving ? 'Saving...' : 'Save Changes',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,
@@ -875,10 +977,8 @@ class _DriverEditWidgetState extends State<DriverEditWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Delete Driver',
+                          onPressed: _saving ? null : () => _deactivateDriver(),
+                          text: 'Deactivate Driver',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,

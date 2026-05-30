@@ -7,6 +7,8 @@ import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../backend/supabase/models/db_models.dart';
+import '../../../../data/mock_state.dart';
 import 'parent_manage_model.dart';
 export 'parent_manage_model.dart';
 
@@ -43,6 +45,13 @@ class _ParentManageWidgetState extends State<ParentManageWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final query = (_model.textController?.text ?? '').trim().toLowerCase();
+    final parents = mock.schoolParents.where((p) {
+      if (query.isEmpty) return true;
+      return p.fullName.toLowerCase().contains(query) ||
+          (p.nationalId ?? '').toLowerCase().contains(query);
+    }).toList();
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -206,135 +215,110 @@ class _ParentManageWidgetState extends State<ParentManageWidget> {
                       _model.textControllerValidator.asValidator(context),
                 ),
               ),
-              Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 16.0),
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  primary: false,
-                  shrinkWrap: true,
-                  scrollDirection: Axis.vertical,
-                  children: [
-                    Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 12.0),
-                      child: InkWell(
-                        onTap: () => context.pushNamed('ParentEdit'),
-                        borderRadius: BorderRadius.circular(12.0),
-                        child: Container(
-                        width: double.infinity,
-                        height: 90.0,
-                        decoration: BoxDecoration(
-                          color:
-                              FlutterFlowTheme.of(context).secondaryBackground,
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 4.0,
-                              color: Color(0x1A000000),
-                              offset: Offset(
-                                0.0,
-                                2.0,
-                              ),
-                            )
-                          ],
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(
-                            color: FlutterFlowTheme.of(context).alternate,
-                            width: 1.0,
-                          ),
+              Expanded(
+                child: parents.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No parents yet',
+                          style: FlutterFlowTheme.of(context).bodyMedium,
                         ),
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Align(
-                                  alignment: AlignmentDirectional(-1.0, 0.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.max,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Align(
-                                          alignment:
-                                              AlignmentDirectional(-1.0, 0.0),
-                                          child: Text(
-                                            '[Parent_Name]',
-                                            style: FlutterFlowTheme.of(context)
-                                                .titleMedium
-                                                .override(
-                                                  font: GoogleFonts.interTight(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontStyle:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .titleMedium
-                                                            .fontStyle,
-                                                  ),
-                                                  letterSpacing: 0.0,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .titleMedium
-                                                          .fontStyle,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Align(
-                                          alignment:
-                                              AlignmentDirectional(-1.0, 0.0),
-                                          child: Text(
-                                            '[ID]',
-                                            style: FlutterFlowTheme.of(context)
-                                                .labelMedium
-                                                .override(
-                                                  font: GoogleFonts.inter(
-                                                    fontWeight:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .labelMedium
-                                                            .fontWeight,
-                                                    fontStyle:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .labelMedium
-                                                            .fontStyle,
-                                                  ),
-                                                  letterSpacing: 0.0,
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .labelMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .labelMedium
-                                                          .fontStyle,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                      )
+                    : Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                            16.0, 0.0, 16.0, 16.0),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          primary: false,
+                          shrinkWrap: true,
+                          scrollDirection: Axis.vertical,
+                          itemCount: parents.length,
+                          itemBuilder: (context, index) =>
+                              _parentCard(context, parents[index]),
                         ),
                       ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _parentCard(BuildContext context, DbProfile parent) {
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 12.0),
+      child: InkWell(
+        onTap: () => context.pushNamed(
+          'ParentEdit',
+          queryParameters: {'pid': parent.id},
+        ),
+        borderRadius: BorderRadius.circular(12.0),
+        child: Container(
+          width: double.infinity,
+          height: 90.0,
+          decoration: BoxDecoration(
+            color: FlutterFlowTheme.of(context).secondaryBackground,
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 4.0,
+                color: Color(0x1A000000),
+                offset: Offset(0.0, 2.0),
+              )
+            ],
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(
+              color: FlutterFlowTheme.of(context).alternate,
+              width: 1.0,
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        parent.fullName,
+                        style: FlutterFlowTheme.of(context)
+                            .titleMedium
+                            .override(
+                              font: GoogleFonts.interTight(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              letterSpacing: 0.0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                            0.0, 4.0, 0.0, 0.0),
+                        child: Text(
+                          parent.nationalId ?? parent.phone ?? '—',
+                          style: FlutterFlowTheme.of(context)
+                              .labelMedium
+                              .override(
+                                font: GoogleFonts.inter(),
+                                letterSpacing: 0.0,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: FlutterFlowTheme.of(context).secondaryText,
+                  size: 24.0,
+                ),
+              ],
+            ),
           ),
         ),
       ),

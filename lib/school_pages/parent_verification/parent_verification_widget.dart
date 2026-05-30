@@ -75,36 +75,93 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
     }).toList();
   }
 
-  void _lookupById(MockState mock) {
+  bool _lookingUp = false;
+
+  Future<void> _lookupById(MockState mock) async {
     FocusScope.of(context).unfocus();
     final raw = _model.textController1?.text ?? '';
-    final hit = mock.lookupGatePickupPersonByNationalId(raw);
+    if (raw.trim().isEmpty) return;
+    setState(() => _lookingUp = true);
+    final hit = await mock.lookupGatePersonAsync(nationalId: raw);
+    if (!mounted) return;
     setState(() {
       _lookupResult = hit;
       _mockScanPositive = null;
       _queueSelected = null;
+      _lookingUp = false;
     });
+    if (hit == null) _notFound();
   }
 
-  void _lookupByPhone(MockState mock) {
+  Future<void> _lookupByPhone(MockState mock) async {
     FocusScope.of(context).unfocus();
     final raw = _model.textController2?.text ?? '';
-    final hit = mock.lookupGatePickupPersonByPhone(raw);
+    if (raw.trim().isEmpty) return;
+    setState(() => _lookingUp = true);
+    final hit = await mock.lookupGatePersonAsync(phone: raw);
+    if (!mounted) return;
     setState(() {
       _lookupResult = hit;
       _mockScanPositive = null;
       _queueSelected = null;
+      _lookingUp = false;
     });
+    if (hit == null) _notFound();
   }
 
-  void _simulateQr(MockState mock) {
+  Future<void> _simulateQr(MockState mock) async {
     FocusScope.of(context).unfocus();
+    setState(() => _lookingUp = true);
     final hit =
-        mock.lookupGatePickupPersonByNationalId('9876543210'); // demo guardian
+        await mock.lookupGatePersonAsync(nationalId: '9876543210');
+    if (!mounted) return;
     setState(() {
       _lookupResult = hit;
       _model.textController1?.text = hit?.nationalId ?? '';
+      _lookingUp = false;
     });
+    if (hit == null) _notFound();
+  }
+
+  void _notFound() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No matching person found.')),
+    );
+  }
+
+  void _release(MockState mock, String childName) {
+    Student? s;
+    try {
+      s = mock.students.firstWhere((st) => st.name == childName);
+    } catch (_) {}
+    if (s == null) return;
+
+    ParentRequest? req;
+    try {
+      req = mock.approvedParentRequestsAwaitingPickup().firstWhere(
+            (r) => mock.demoChildName(r.studentId) == childName ||
+                r.studentId == s!.id,
+          );
+    } catch (_) {}
+
+    if (req != null) {
+      mock.releaseStudentAfterVerification(req.id);
+    }
+    mock.updateStudentStatus(s.id, StudentStatus.pickedUpByCar);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+        backgroundColor: GateFlowColors.success,
+        content: Text(
+          '$childName released.',
+          style: GoogleFonts.inter(
+              color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
   }
 
   @override
@@ -352,29 +409,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                                   ),
                                 ),
                                 FFButtonWidget(
-                                  onPressed: () {
-                                    Student? s;
-                                    try {
-                                      s = mock.students.firstWhere((st) => st.name == childName);
-                                    } catch (_) {}
-                                    if (s != null) {
-                                      mock.updateStudentStatus(s.id, StudentStatus.pickedUpByCar);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12)),
-                                          backgroundColor: GateFlowColors.success,
-                                          content: Text(
-                                            '$childName marked as picked up.',
-                                            style: GoogleFonts.inter(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w600),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                  onPressed: () => _release(mock, childName),
                                   text: 'Release',
                                   options: FFButtonOptions(
                                     height: 36,

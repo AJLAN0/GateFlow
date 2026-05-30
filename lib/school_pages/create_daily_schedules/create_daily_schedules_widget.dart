@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../data/mock_state.dart';
 import 'create_daily_schedules_model.dart';
 export 'create_daily_schedules_model.dart';
 
@@ -40,6 +41,50 @@ class _CreateDailySchedulesWidgetState
     _model.dispose();
 
     super.dispose();
+  }
+
+  bool _saving = false;
+
+  Future<void> _createSchedule() async {
+    if (_saving) return;
+    final mock = context.read<MockState>();
+    final period = _model.dropDownValue2;
+    final grade = _model.dropDownValue3;
+    final time = _model.datePicked;
+
+    if (period == null || grade == null || time == null) {
+      _showSnack('Please pick a time, period and grade.');
+      return;
+    }
+
+    final timeStr =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    final isPickup = period == 'Pick-up';
+
+    setState(() => _saving = true);
+    try {
+      await mock.createSchedule(
+        className:     grade,
+        grade:         grade,
+        date:          DateTime.now(),
+        arrivalTime:   isPickup ? null : timeStr,
+        departureTime: isPickup ? timeStr : null,
+        notes:         period,
+      );
+      if (!mounted) return;
+      _showSnack('Schedule created');
+      context.safePop();
+    } catch (e) {
+      if (mounted) _showSnack('Could not create schedule: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -530,10 +575,8 @@ class _CreateDailySchedulesWidgetState
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Create Schedule ',
+                          onPressed: _saving ? null : () => _createSchedule(),
+                          text: _saving ? 'Creating...' : 'Create Schedule ',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,
@@ -571,9 +614,7 @@ class _CreateDailySchedulesWidgetState
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 0.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
+                          onPressed: () => context.safePop(),
                           text: 'Cancel ',
                           options: FFButtonOptions(
                             width: double.infinity,

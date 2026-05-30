@@ -83,6 +83,16 @@ class BusService {
   }
 
   // ---------------------------------------------------------------------------
+  // Set (or clear) the bus's assigned driver explicitly. Passing null clears it.
+  // ---------------------------------------------------------------------------
+  Future<void> setDriver({required String busId, String? driverId}) async {
+    await supabase
+        .from('buses')
+        .update({'driver_id': driverId})
+        .eq('id', busId);
+  }
+
+  // ---------------------------------------------------------------------------
   // Update bus status (driver or admin)
   // ---------------------------------------------------------------------------
   Future<void> updateStatus({

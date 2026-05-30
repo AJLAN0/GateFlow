@@ -74,6 +74,73 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
     super.dispose();
   }
 
+  bool _saving = false;
+
+  Future<void> _saveStudent() async {
+    if (_saving) return;
+
+    final mock = context.read<MockState>();
+    final name = _model.textController1.text.trim();
+    final grade = (_model.dropDownGradeValue ?? '').trim();
+    final transport =
+        _model.dropDownTransValue == 'School Bus' ? 'bus' : 'car';
+
+    if (name.isEmpty || grade.isEmpty || _model.dropDownTransValue == null) {
+      _showSnack('Please fill in name, grade and transportation.');
+      return;
+    }
+
+    // Resolve the selected bus name to its real id.
+    String? busId;
+    if (transport == 'bus') {
+      final busName = _model.dropDownBusNoValue;
+      if (busName == null || busName.isEmpty) {
+        _showSnack('Please select a bus number.');
+        return;
+      }
+      final match =
+          mock.buses.where((b) => b.name == busName).toList();
+      busId = match.isNotEmpty ? match.first.id : null;
+    }
+
+    // Optionally link to a parent by their national ID.
+    String? parentId;
+    final parentNationalId = _model.textController3.text.trim();
+    if (parentNationalId.isNotEmpty) {
+      final match = mock.schoolParents
+          .where((p) => (p.nationalId ?? '') == parentNationalId)
+          .toList();
+      if (match.isNotEmpty) parentId = match.first.id;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await mock.addStudent(
+        name:          name,
+        grade:         grade,
+        transportType: transport,
+        busId:         busId,
+        parentId:      parentId,
+      );
+      if (!mounted) return;
+      final linkNote = (parentNationalId.isNotEmpty && parentId == null)
+          ? ' (parent ID not found — not linked)'
+          : '';
+      _showSnack('Student added$linkNote');
+      context.safePop();
+    } catch (e) {
+      if (mounted) _showSnack('Could not add student: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1516,10 +1583,8 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Add Student',
+                          onPressed: _saving ? null : () => _saveStudent(),
+                          text: _saving ? 'Adding...' : 'Add Student',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,

@@ -6,7 +6,6 @@ import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'splash_model.dart';
 export 'splash_model.dart';
@@ -116,12 +115,15 @@ class _SplashWidgetState extends State<SplashWidget> {
                 ),
                 Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 60.0, 0.0, 0.0),
-                  child: Lottie.asset(
-                    'assets/jsons/lf20_szlepvdh.json',
+                  child: SizedBox(
                     width: 48.0,
                     height: 48.0,
-                    fit: BoxFit.contain,
-                    animate: true,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFFFFFFFF),
+                      ),
+                      strokeWidth: 3.0,
+                    ),
                   ),
                 ),
               ],

@@ -7,11 +7,12 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:test/data/mock_state.dart';
 import 'package:test/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App builds smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp());
+    await tester.pumpWidget(MyApp(mockState: MockState()));
   });
 }

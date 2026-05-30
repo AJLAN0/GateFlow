@@ -47,6 +47,8 @@ class DbProfile {
   final String? schoolId;
   final String? nationalId;
   final String? avatarUrl;
+  final String? loginEmail;
+  final String? initialPassword;
   final bool    isActive;
   final DateTime createdAt;
 
@@ -58,20 +60,24 @@ class DbProfile {
     this.schoolId,
     this.nationalId,
     this.avatarUrl,
+    this.loginEmail,
+    this.initialPassword,
     required this.isActive,
     required this.createdAt,
   });
 
   factory DbProfile.fromJson(Map<String, dynamic> j) => DbProfile(
-        id:          j['id'] as String,
-        fullName:    j['full_name'] as String,
-        phone:       j['phone'] as String?,
-        role:        j['role'] as String,
-        schoolId:    j['school_id'] as String?,
-        nationalId:  j['national_id'] as String?,
-        avatarUrl:   j['avatar_url'] as String?,
-        isActive:    (j['is_active'] as bool?) ?? true,
-        createdAt:   DateTime.parse(j['created_at'] as String),
+        id:              j['id'] as String,
+        fullName:        j['full_name'] as String,
+        phone:           j['phone'] as String?,
+        role:            j['role'] as String,
+        schoolId:        j['school_id'] as String?,
+        nationalId:      j['national_id'] as String?,
+        avatarUrl:       j['avatar_url'] as String?,
+        loginEmail:      j['login_email'] as String?,
+        initialPassword: j['initial_password'] as String?,
+        isActive:        (j['is_active'] as bool?) ?? true,
+        createdAt:       DateTime.parse(j['created_at'] as String),
       );
 
   Map<String, dynamic> toInsertJson({

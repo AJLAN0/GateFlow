@@ -4,9 +4,11 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/mock_state.dart';
 import 'student_status_view_bus_car_model.dart';
 export 'student_status_view_bus_car_model.dart';
 
@@ -42,6 +44,14 @@ class _StudentStatusViewBusCarWidgetState
 
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final sid = GoRouterState.of(context).uri.queryParameters['sid'];
+    Student? student;
+    if (sid != null) {
+      try {
+        student = mock.students.firstWhere((s) => s.id == sid);
+      } catch (_) {}
+    }
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -135,7 +145,7 @@ class _StudentStatusViewBusCarWidgetState
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Saleh Ahmed',
+                                      student?.name ?? 'Unknown student',
                                       style: FlutterFlowTheme.of(context)
                                           .titleMedium
                                           .override(
@@ -155,7 +165,9 @@ class _StudentStatusViewBusCarWidgetState
                                           ),
                                     ),
                                     Text(
-                                      'Grade 8 • ID: ST2024-089',
+                                      student != null
+                                          ? '${student.grade} • ID: ${student.id}'
+                                          : '—',
                                       style: FlutterFlowTheme.of(context)
                                           .bodyMedium
                                           .override(

@@ -80,9 +80,15 @@ class _StudentStatusWidgetState extends State<StudentStatusWidget> {
 
   void _openDetails(BuildContext context, Student s) {
     if (studentUsesBusRoster(s)) {
-      context.pushNamed(StudentStatusViewBusWidget.routeName);
+      context.pushNamed(
+        StudentStatusViewBusWidget.routeName,
+        queryParameters: {'sid': s.id},
+      );
     } else {
-      context.pushNamed(StudentStatusViewBusCarWidget.routeName);
+      context.pushNamed(
+        StudentStatusViewBusCarWidget.routeName,
+        queryParameters: {'sid': s.id},
+      );
     }
   }
 

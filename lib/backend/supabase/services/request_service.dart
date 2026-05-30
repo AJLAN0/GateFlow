@@ -62,6 +62,18 @@ class RequestService {
           .order('created_at', ascending: false);
 
   // ---------------------------------------------------------------------------
+  // Real-time stream: every request the caller is allowed to see.
+  // pickup_requests has no school_id column, so school scoping is enforced by
+  // RLS ("staff: view school requests"). Staff therefore receive all of their
+  // school's requests (all statuses), parents only their own.
+  // ---------------------------------------------------------------------------
+  Stream<List<Map<String, dynamic>>> streamAll() =>
+      supabase
+          .from('pickup_requests')
+          .stream(primaryKey: ['id'])
+          .order('created_at', ascending: false);
+
+  // ---------------------------------------------------------------------------
   // Submit new pickup/dropoff request
   // ---------------------------------------------------------------------------
   Future<DbPickupRequest> submit({

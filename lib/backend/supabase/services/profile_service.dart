@@ -12,17 +12,16 @@ class ProfileService {
     required String schoolId,
     String? roleFilter,
   }) async {
-    var query = supabase
+    var filter = supabase
         .from('profiles')
         .select()
-        .eq('school_id', schoolId)
-        .order('full_name');
+        .eq('school_id', schoolId);
 
     if (roleFilter != null) {
-      query = query.eq('role', roleFilter);
+      filter = filter.eq('role', roleFilter);
     }
 
-    final rows = await query;
+    final rows = await filter.order('full_name');
     return rows.map(DbProfile.fromJson).toList();
   }
 
