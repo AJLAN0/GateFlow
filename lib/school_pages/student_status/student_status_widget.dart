@@ -1,15 +1,23 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
+import '../../data/mock_state.dart';
+import '../../shared/gateflow_colors.dart';
 import '../../shared/role_bottom_nav.dart';
+import '../../shared/school_student_row_card.dart';
+import '../../shared/student_status_helpers.dart';
+import '../student_status_view_bus/student_status_view_bus_widget.dart';
+import '../student_status_view_bus_car/student_status_view_bus_car_widget.dart';
 import 'student_status_model.dart';
+
 export 'student_status_model.dart';
+
+enum _StudentFilterKey { all, atSchool, onBus, atHome, pending }
 
 class StudentStatusWidget extends StatefulWidget {
   const StudentStatusWidget({super.key});
@@ -25,6 +33,7 @@ class _StudentStatusWidgetState extends State<StudentStatusWidget> {
   late StudentStatusModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  _StudentFilterKey _filter = _StudentFilterKey.all;
 
   @override
   void initState() {
@@ -42,8 +51,52 @@ class _StudentStatusWidgetState extends State<StudentStatusWidget> {
     super.dispose();
   }
 
+  bool _passesFilter(MockState mock, Student s) {
+    switch (_filter) {
+      case _StudentFilterKey.all:
+        return true;
+      case _StudentFilterKey.atSchool:
+        return s.status == StudentStatus.atSchool;
+      case _StudentFilterKey.onBus:
+        return s.status == StudentStatus.onBusToSchool ||
+            s.status == StudentStatus.onBusToHome;
+      case _StudentFilterKey.atHome:
+        return s.status == StudentStatus.atHome ||
+            s.status == StudentStatus.pickedUpByCar;
+      case _StudentFilterKey.pending:
+        return mock.studentHasPendingPickupRequest(s);
+    }
+  }
+
+  List<Student> _visible(MockState mock) {
+    final q = (_model.textController?.text ?? '').trim().toLowerCase();
+    return mock.students.where((s) {
+      if (!_passesFilter(mock, s)) return false;
+      if (q.isEmpty) return true;
+      final bundle = '${s.name} ${s.grade} ${s.id}'.toLowerCase();
+      return bundle.contains(q);
+    }).toList();
+  }
+
+  void _openDetails(BuildContext context, Student s) {
+    if (studentUsesBusRoster(s)) {
+      context.pushNamed(
+        StudentStatusViewBusWidget.routeName,
+        queryParameters: {'sid': s.id},
+      );
+    } else {
+      context.pushNamed(
+        StudentStatusViewBusCarWidget.routeName,
+        queryParameters: {'sid': s.id},
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final list = _visible(mock);
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -51,274 +104,179 @@ class _StudentStatusWidgetState extends State<StudentStatusWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        bottomNavigationBar: RoleBottomNav(current: 'monitor'),
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: GateFlowColors.surface,
         appBar: AppBar(
-          backgroundColor: Color(0xFF0C3451),
+          backgroundColor: GateFlowColors.brandPrimary,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
             borderRadius: 30.0,
             borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 30.0,
-            ),
-            onPressed: () async {
-              context.safePop();
-            },
+            buttonSize: 56,
+            icon: const Icon(Icons.arrow_back_rounded,
+                color: Colors.white, size: 26),
+            onPressed: () => context.safePop(),
           ),
           title: Text(
-            'Student Status',
-            style: FlutterFlowTheme.of(context).titleLarge.override(
-                  font: GoogleFonts.outfit(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                  fontSize: 24.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                  fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                ),
+            'Student status',
+            style: GoogleFonts.outfit(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 22,
+            ),
           ),
-          actions: [],
-          centerTitle: false,
-          elevation: 2.0,
+          elevation: 0,
         ),
+        bottomNavigationBar: const RoleBottomNav(current: 'monitor'),
         body: SafeArea(
-          top: true,
           child: Column(
-            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(16.0, 20.0, 16.0, 20.0),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: TextFormField(
                   controller: _model.textController,
                   focusNode: _model.textFieldFocusNode,
                   onChanged: (_) => EasyDebounce.debounce(
-                    '_model.textController',
-                    Duration(milliseconds: 300),
+                    'stu-status-q',
+                    const Duration(milliseconds: 280),
                     () => safeSetState(() {}),
                   ),
-                  autofocus: false,
-                  obscureText: false,
                   decoration: InputDecoration(
-                    isDense: false,
-                    hintText: 'Search Student by Name or ID to view status...',
-                    hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                          font: GoogleFonts.readexPro(
-                            fontWeight: FontWeight.normal,
-                            fontStyle: FlutterFlowTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
-                          ),
-                          color: Color(0xFF57636C),
-                          fontSize: 16.0,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.normal,
-                          fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                        ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFFE0E3E7),
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFF19DB8A),
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0x00000000),
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0x00000000),
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
+                    hintText: 'Search name, grade, or student ID…',
+                    prefixIcon:
+                        const Icon(Icons.search_rounded, color: Color(0xFF57636C)),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFF57636C),
-                      size: 20.0,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: GateFlowColors.divider),
                     ),
-                    suffixIcon: _model.textController!.text.isNotEmpty
-                        ? InkWell(
-                            onTap: () async {
-                              _model.textController?.clear();
-                              safeSetState(() {});
-                            },
-                            child: Icon(
-                              Icons.clear,
-                              color: Color(0xFF57636C),
-                              size: 20.0,
-                            ),
-                          )
-                        : null,
                   ),
-                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        font: GoogleFonts.readexPro(
-                          fontWeight: FontWeight.normal,
-                          fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                        ),
-                        color: Color(0xFF14181B),
-                        fontSize: 16.0,
-                        letterSpacing: 0.0,
-                        fontWeight: FontWeight.normal,
-                        fontStyle:
-                            FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                      ),
-                  keyboardType: TextInputType.name,
-                  validator:
-                      _model.textControllerValidator.asValidator(context),
                 ),
               ),
-              Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 16.0),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 40,
                 child: ListView(
-                  padding: EdgeInsets.zero,
-                  primary: false,
-                  shrinkWrap: true,
-                  scrollDirection: Axis.vertical,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 12.0),
-                      child: Container(
-                        width: double.infinity,
-                        height: 90.0,
-                        decoration: BoxDecoration(
-                          color:
-                              FlutterFlowTheme.of(context).secondaryBackground,
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 4.0,
-                              color: Color(0x1A000000),
-                              offset: Offset(
-                                0.0,
-                                2.0,
-                              ),
-                            )
-                          ],
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(
-                            color: FlutterFlowTheme.of(context).alternate,
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Align(
-                                  alignment: AlignmentDirectional(-1.0, 0.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.max,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Align(
-                                          alignment:
-                                              AlignmentDirectional(-1.0, 0.0),
-                                          child: Text(
-                                            '[Student_Name]',
-                                            style: FlutterFlowTheme.of(context)
-                                                .titleMedium
-                                                .override(
-                                                  font: GoogleFonts.interTight(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontStyle:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .titleMedium
-                                                            .fontStyle,
-                                                  ),
-                                                  letterSpacing: 0.0,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .titleMedium
-                                                          .fontStyle,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Align(
-                                          alignment:
-                                              AlignmentDirectional(-1.0, 0.0),
-                                          child: Text(
-                                            '[ID]',
-                                            style: FlutterFlowTheme.of(context)
-                                                .labelMedium
-                                                .override(
-                                                  font: GoogleFonts.inter(
-                                                    fontWeight:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .labelMedium
-                                                            .fontWeight,
-                                                    fontStyle:
-                                                        FlutterFlowTheme.of(
-                                                                context)
-                                                            .labelMedium
-                                                            .fontStyle,
-                                                  ),
-                                                  letterSpacing: 0.0,
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .labelMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .labelMedium
-                                                          .fontStyle,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    _FilterChip(
+                      label: 'All',
+                      selected: _filter == _StudentFilterKey.all,
+                      onTap: () =>
+                          safeSetState(() => _filter = _StudentFilterKey.all),
+                    ),
+                    _FilterChip(
+                      label: 'At school',
+                      selected: _filter == _StudentFilterKey.atSchool,
+                      onTap: () => safeSetState(
+                          () => _filter = _StudentFilterKey.atSchool),
+                    ),
+                    _FilterChip(
+                      label: 'On bus',
+                      selected: _filter == _StudentFilterKey.onBus,
+                      onTap: () =>
+                          safeSetState(() => _filter = _StudentFilterKey.onBus),
+                    ),
+                    _FilterChip(
+                      label: 'At home',
+                      selected: _filter == _StudentFilterKey.atHome,
+                      onTap: () => safeSetState(
+                          () => _filter = _StudentFilterKey.atHome),
+                    ),
+                    _FilterChip(
+                      label: 'Pending',
+                      selected: _filter == _StudentFilterKey.pending,
+                      onTap: () => safeSetState(
+                          () => _filter = _StudentFilterKey.pending),
                     ),
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Text(
+                  '${list.length} student${list.length == 1 ? '' : 's'}',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: GateFlowColors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: list.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No students match this filter.',
+                          style: GoogleFonts.inter(
+                            color: GateFlowColors.textTertiary,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        itemCount: list.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final s = list[i];
+                          return SchoolStudentRowCard(
+                            student: s,
+                            mock: mock,
+                            onOpenDetails: () => _openDetails(context, s),
+                          );
+                        },
+                      ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: selected ? GateFlowColors.brandPrimary : Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color:
+                    selected ? GateFlowColors.brandPrimary : GateFlowColors.divider,
+              ),
+            ),
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : GateFlowColors.textPrimary,
+              ),
+            ),
           ),
         ),
       ),

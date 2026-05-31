@@ -6,8 +6,12 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../data/mock_state.dart';
+import '../../account_credentials_dialog.dart';
+import '../parent_manage/parent_manage_widget.dart';
 import 'parent_add_model.dart';
 export 'parent_add_model.dart';
 
@@ -45,6 +49,9 @@ class _ParentAddWidgetState extends State<ParentAddWidget> {
 
     _model.textController5 ??= TextEditingController();
     _model.textFieldFocusNode5 ??= FocusNode();
+
+    _model.textController6 ??= TextEditingController();
+    _model.textFieldFocusNode6 ??= FocusNode();
   }
 
   @override
@@ -52,6 +59,48 @@ class _ParentAddWidgetState extends State<ParentAddWidget> {
     _model.dispose();
 
     super.dispose();
+  }
+
+  bool _saving = false;
+
+  Future<void> _saveParent() async {
+    if (_saving) return;
+    final name = _model.textController1.text.trim();
+    final nationalId = _model.textController2.text.trim();
+    final phone = _model.textController3.text.trim();
+    final email = _model.textController6.text.trim();
+
+    if (name.isEmpty || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Parent name and email are required.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    final result = await context.read<MockState>().createParentAccount(
+          email: email,
+          fullName: name,
+          phone: phone.isEmpty ? null : phone,
+          nationalId: nationalId.isEmpty ? null : nationalId,
+        );
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (result.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not add parent: ${result.error}')),
+      );
+      return;
+    }
+    await showNewAccountCredentialsDialog(
+      context,
+      title: 'Parent account created',
+      email: result.email ?? email,
+      tempPassword: result.tempPassword,
+    );
+    if (!mounted) return;
+    context.goNamed(ParentManageWidget.routeName);
   }
 
   @override
@@ -1050,6 +1099,110 @@ class _ParentAddWidgetState extends State<ParentAddWidget> {
                                           .asValidator(context),
                                     ),
                                   ),
+                                  Divider(
+                                    height: 24.0,
+                                    thickness: 1.0,
+                                    color:
+                                        FlutterFlowTheme.of(context).alternate,
+                                  ),
+                                  Text(
+                                    'Login Email *',
+                                    style: FlutterFlowTheme.of(context)
+                                        .titleSmall
+                                        .override(
+                                          font: GoogleFonts.interTight(
+                                            fontWeight: FontWeight.w500,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight: FontWeight.w500,
+                                          fontStyle:
+                                              FlutterFlowTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                        ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        0.0, 6.0, 0.0, 0.0),
+                                    child: TextFormField(
+                                      controller: _model.textController6,
+                                      focusNode: _model.textFieldFocusNode6,
+                                      autofocus: false,
+                                      obscureText: false,
+                                      keyboardType:
+                                          TextInputType.emailAddress,
+                                      decoration: InputDecoration(
+                                        hintText: 'parent@example.com',
+                                        hintStyle: FlutterFlowTheme.of(context)
+                                            .bodyMedium
+                                            .override(
+                                              font: GoogleFonts.inter(),
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .secondaryText,
+                                              fontSize: 15.0,
+                                              letterSpacing: 0.0,
+                                            ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .alternate,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .primary,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .error,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .error,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        filled: true,
+                                        fillColor: FlutterFlowTheme.of(context)
+                                            .primaryBackground,
+                                        contentPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                14.0, 14.0, 14.0, 14.0),
+                                      ),
+                                      style: FlutterFlowTheme.of(context)
+                                          .bodyMedium
+                                          .override(
+                                            font: GoogleFonts.inter(),
+                                            color: FlutterFlowTheme.of(context)
+                                                .primaryText,
+                                            fontSize: 15.0,
+                                            letterSpacing: 0.0,
+                                          ),
+                                      validator: _model.textController6Validator
+                                          .asValidator(context),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -1060,10 +1213,8 @@ class _ParentAddWidgetState extends State<ParentAddWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Add Parent',
+                          onPressed: _saving ? null : () => _saveParent(),
+                          text: _saving ? 'Adding...' : 'Add Parent',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,

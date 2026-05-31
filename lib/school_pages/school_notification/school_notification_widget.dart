@@ -66,7 +66,7 @@ class _SchoolNotificationWidgetState extends State<SchoolNotificationWidget> {
             },
           ),
           title: Text(
-            'Notifications',
+            'Operational alerts',
             style: FlutterFlowTheme.of(context).titleLarge.override(
                   font: GoogleFonts.outfit(
                     fontWeight:

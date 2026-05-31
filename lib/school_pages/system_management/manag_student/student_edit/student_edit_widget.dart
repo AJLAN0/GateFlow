@@ -7,8 +7,11 @@ import '/flutter_flow/form_field_controller.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../../data/mock_state.dart';
+import '../student_manage/student_manage_widget.dart';
 import 'student_edit_model.dart';
 export 'student_edit_model.dart';
 
@@ -52,8 +55,120 @@ class _StudentEditWidgetState extends State<StudentEditWidget> {
     super.dispose();
   }
 
+  bool _prefilled = false;
+  bool _saving = false;
+  String? _studentId;
+
+  void _prefillFrom(MockState mock) {
+    if (_prefilled) return;
+    final sid = GoRouterState.of(context).uri.queryParameters['sid'];
+    _studentId = sid;
+    if (sid == null) {
+      _prefilled = true;
+      return;
+    }
+    final match = mock.students.where((s) => s.id == sid).toList();
+    if (match.isNotEmpty) {
+      final s = match.first;
+      _model.textController1?.text = s.name;
+      _model.textController2?.text = s.id;
+      _model.dropDownGradeValue = s.grade;
+      _model.dropDownGradeValueController?.value = s.grade;
+      if (s.busId != null && s.busId!.isNotEmpty) {
+        _model.dropDownTransValue = 'School Bus';
+        _model.dropDownTransValueController?.value = 'School Bus';
+        final bus =
+            mock.buses.where((b) => b.id == s.busId).toList();
+        if (bus.isNotEmpty) {
+          _model.dropDownBusNoValue = bus.first.name;
+          _model.dropDownBusNoValueController?.value = bus.first.name;
+        }
+      } else {
+        _model.dropDownTransValue = 'Private Car';
+        _model.dropDownTransValueController?.value = 'Private Car';
+      }
+    }
+    _prefilled = true;
+  }
+
+  Future<void> _saveChanges() async {
+    if (_saving || _studentId == null) return;
+    final mock = context.read<MockState>();
+    final name = _model.textController1.text.trim();
+    final grade = (_model.dropDownGradeValue ?? '').trim();
+    final transport =
+        _model.dropDownTransValue == 'School Bus' ? 'bus' : 'car';
+
+    String? busId;
+    if (transport == 'bus' && _model.dropDownBusNoValue != null) {
+      final match =
+          mock.buses.where((b) => b.name == _model.dropDownBusNoValue).toList();
+      busId = match.isNotEmpty ? match.first.id : null;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await mock.updateStudentRecord(
+        id:            _studentId!,
+        name:          name.isEmpty ? null : name,
+        grade:         grade.isEmpty ? null : grade,
+        transportType: transport,
+        busId:         busId,
+      );
+      if (!mounted) return;
+      _showSnack('Changes saved');
+      context.goNamed(StudentManageWidget.routeName);
+    } catch (e) {
+      if (mounted) _showSnack('Could not save: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _deleteStudent() async {
+    if (_saving || _studentId == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete student'),
+        content:
+            const Text('This permanently removes the student. Continue?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final mock = context.read<MockState>();
+    setState(() => _saving = true);
+    try {
+      await mock.deleteStudent(_studentId!);
+      if (!mounted) return;
+      _showSnack('Student deleted');
+      context.goNamed(StudentManageWidget.routeName);
+    } catch (e) {
+      if (mounted) _showSnack('Could not delete: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    _prefillFrom(mock);
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -815,7 +930,9 @@ class _StudentEditWidgetState extends State<StudentEditWidget> {
                                                           .dropDownBusNoValueController ??=
                                                       FormFieldController<
                                                           String>(null),
-                                                  options: <String>[],
+                                                  options: mock.buses
+                                                      .map((b) => b.name)
+                                                      .toList(),
                                                   onChanged: (val) =>
                                                       safeSetState(() => _model
                                                               .dropDownBusNoValue =
@@ -1304,10 +1421,8 @@ class _StudentEditWidgetState extends State<StudentEditWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Save Changes',
+                          onPressed: _saving ? null : () => _saveChanges(),
+                          text: _saving ? 'Saving...' : 'Save Changes',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,
@@ -1345,9 +1460,7 @@ class _StudentEditWidgetState extends State<StudentEditWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
+                          onPressed: _saving ? null : () => _deleteStudent(),
                           text: 'Delete Student',
                           options: FFButtonOptions(
                             width: double.infinity,

@@ -4,8 +4,11 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../backend/supabase/models/db_models.dart';
+import '../../../../data/mock_state.dart';
 import 'guardian_details_model.dart';
 export 'guardian_details_model.dart';
 
@@ -37,8 +40,40 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
     super.dispose();
   }
 
+  bool _working = false;
+
+  Future<void> _review(String gid, RequestStatus status) async {
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      await context
+          .read<MockState>()
+          .reviewGuardianRequest(gid, status);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(status == RequestStatus.approved
+              ? 'Guardian approved'
+              : 'Guardian rejected'),
+        ),
+      );
+      context.safePop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not update guardian: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final gid = GoRouterState.of(context).uri.queryParameters['gid'];
+    final DbGuardian? guardian = gid != null ? mock.guardianById(gid) : null;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -191,7 +226,7 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  'Mohammed Ahmed',
+                                  guardian?.fullName ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -262,7 +297,7 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  '1100010000',
+                                  guardian?.nationalId ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -333,7 +368,7 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  '05*******',
+                                  guardian?.phone ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -404,7 +439,7 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  'Brother',
+                                  guardian?.relationship ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -571,9 +606,10 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
                           ),
                         ),
                         FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
+                          onPressed: (_working || guardian == null)
+                              ? null
+                              : () => _review(
+                                  guardian.id, RequestStatus.approved),
                           text: 'Approve Guardian',
                           icon: Icon(
                             Icons.check_circle_rounded,
@@ -616,9 +652,10 @@ class _GuardianDetailsWidgetState extends State<GuardianDetailsWidget> {
                           padding: EdgeInsetsDirectional.fromSTEB(
                               0.0, 10.0, 0.0, 0.0),
                           child: FFButtonWidget(
-                            onPressed: () {
-                              print('Button pressed ...');
-                            },
+                            onPressed: (_working || guardian == null)
+                                ? null
+                                : () => _review(
+                                    guardian.id, RequestStatus.rejected),
                             text: 'Reject Guardian',
                             icon: Icon(
                               Icons.cancel_sharp,

@@ -7,8 +7,12 @@ import '/flutter_flow/form_field_controller.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../../data/mock_state.dart';
+import '../../../account_credentials_dialog.dart';
+import '../driver_manage/driver_manage_widget.dart';
 import 'driver_add_model.dart';
 export 'driver_add_model.dart';
 
@@ -40,6 +44,9 @@ class _DriverAddWidgetState extends State<DriverAddWidget> {
 
     _model.textController3 ??= TextEditingController();
     _model.textFieldFocusNode3 ??= FocusNode();
+
+    _model.textController4 ??= TextEditingController();
+    _model.textFieldFocusNode4 ??= FocusNode();
   }
 
   @override
@@ -49,8 +56,54 @@ class _DriverAddWidgetState extends State<DriverAddWidget> {
     super.dispose();
   }
 
+  bool _saving = false;
+
+  Future<void> _saveDriver() async {
+    if (_saving) return;
+    final name = _model.textController1.text.trim();
+    final nationalId = _model.textController2.text.trim();
+    final phone = _model.textController3.text.trim();
+    final email = _model.textController4.text.trim();
+    final busId = _model.dropDownValue2;
+
+    if (name.isEmpty || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Driver name and email are required.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    final result = await context.read<MockState>().createDriverAccount(
+          email: email,
+          fullName: name,
+          phone: phone.isEmpty ? null : phone,
+          nationalId: nationalId.isEmpty ? null : nationalId,
+          busId: busId,
+        );
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (result.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not add driver: ${result.error}')),
+      );
+      return;
+    }
+    await showNewAccountCredentialsDialog(
+      context,
+      title: 'Driver account created',
+      email: result.email ?? email,
+      tempPassword: result.tempPassword,
+    );
+    if (!mounted) return;
+    context.goNamed(DriverManageWidget.routeName);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final buses = mock.buses;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -768,7 +821,10 @@ class _DriverAddWidgetState extends State<DriverAddWidget> {
                                         controller: _model
                                                 .dropDownValueController2 ??=
                                             FormFieldController<String>(null),
-                                        options: <String>[],
+                                        options:
+                                            buses.map((b) => b.id).toList(),
+                                        optionLabels:
+                                            buses.map((b) => b.name).toList(),
                                         onChanged: (val) => safeSetState(
                                             () => _model.dropDownValue2 = val),
                                         width: double.infinity,
@@ -824,6 +880,110 @@ class _DriverAddWidgetState extends State<DriverAddWidget> {
                                       ),
                                     ),
                                   ),
+                                  Divider(
+                                    height: 24.0,
+                                    thickness: 1.0,
+                                    color:
+                                        FlutterFlowTheme.of(context).alternate,
+                                  ),
+                                  Text(
+                                    'Login Email *',
+                                    style: FlutterFlowTheme.of(context)
+                                        .titleSmall
+                                        .override(
+                                          font: GoogleFonts.interTight(
+                                            fontWeight: FontWeight.w500,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight: FontWeight.w500,
+                                          fontStyle:
+                                              FlutterFlowTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                        ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        0.0, 6.0, 0.0, 0.0),
+                                    child: TextFormField(
+                                      controller: _model.textController4,
+                                      focusNode: _model.textFieldFocusNode4,
+                                      autofocus: false,
+                                      obscureText: false,
+                                      keyboardType:
+                                          TextInputType.emailAddress,
+                                      decoration: InputDecoration(
+                                        hintText: 'driver@example.com',
+                                        hintStyle: FlutterFlowTheme.of(context)
+                                            .bodyMedium
+                                            .override(
+                                              font: GoogleFonts.inter(),
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .secondaryText,
+                                              fontSize: 15.0,
+                                              letterSpacing: 0.0,
+                                            ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .alternate,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .primary,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .error,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: FlutterFlowTheme.of(context)
+                                                .error,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        filled: true,
+                                        fillColor: FlutterFlowTheme.of(context)
+                                            .primaryBackground,
+                                        contentPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                14.0, 14.0, 14.0, 14.0),
+                                      ),
+                                      style: FlutterFlowTheme.of(context)
+                                          .bodyMedium
+                                          .override(
+                                            font: GoogleFonts.inter(),
+                                            color: FlutterFlowTheme.of(context)
+                                                .primaryText,
+                                            fontSize: 15.0,
+                                            letterSpacing: 0.0,
+                                          ),
+                                      validator: _model.textController4Validator
+                                          .asValidator(context),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -834,10 +994,8 @@ class _DriverAddWidgetState extends State<DriverAddWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () {
-                            print('Button pressed ...');
-                          },
-                          text: 'Add Driver',
+                          onPressed: _saving ? null : () => _saveDriver(),
+                          text: _saving ? 'Adding...' : 'Add Driver',
                           options: FFButtonOptions(
                             width: double.infinity,
                             height: 56.0,

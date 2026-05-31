@@ -4,8 +4,11 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../backend/supabase/models/db_models.dart';
+import '../../../../data/mock_state.dart';
 import 'approved_g_d_model.dart';
 export 'approved_g_d_model.dart';
 
@@ -39,6 +42,9 @@ class _ApprovedGDWidgetState extends State<ApprovedGDWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final gid = GoRouterState.of(context).uri.queryParameters['gid'];
+    final DbGuardian? guardian = gid != null ? mock.guardianById(gid) : null;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -191,7 +197,7 @@ class _ApprovedGDWidgetState extends State<ApprovedGDWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  'Mohammed Ahmed',
+                                  guardian?.fullName ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -262,7 +268,7 @@ class _ApprovedGDWidgetState extends State<ApprovedGDWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  '1100010000',
+                                  guardian?.nationalId ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -333,7 +339,7 @@ class _ApprovedGDWidgetState extends State<ApprovedGDWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  '05*******',
+                                  guardian?.phone ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -404,7 +410,7 @@ class _ApprovedGDWidgetState extends State<ApprovedGDWidget> {
                                   ].divide(SizedBox(width: 10.0)),
                                 ),
                                 Text(
-                                  'Brother',
+                                  guardian?.relationship ?? '—',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(

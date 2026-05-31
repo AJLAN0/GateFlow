@@ -5,8 +5,11 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../../../data/mock_state.dart';
+import '../bus_manage/bus_manage_widget.dart';
 import 'bus_edit_model.dart';
 export 'bus_edit_model.dart';
 
@@ -53,8 +56,96 @@ class _BusEditWidgetState extends State<BusEditWidget> {
     super.dispose();
   }
 
+  bool _prefilled = false;
+  bool _saving = false;
+  String? _busId;
+
+  void _prefillFrom(MockState mock) {
+    if (_prefilled) return;
+    final bid = GoRouterState.of(context).uri.queryParameters['bid'];
+    _busId = bid;
+    if (bid != null) {
+      final match = mock.buses.where((b) => b.id == bid).toList();
+      if (match.isNotEmpty) {
+        final b = match.first;
+        _model.textController1?.text = b.name;
+        _model.textController2?.text = b.routeLabel;
+      }
+    }
+    _prefilled = true;
+  }
+
+  Future<void> _saveChanges() async {
+    if (_saving || _busId == null) return;
+    final mock = context.read<MockState>();
+    final name = _model.textController1.text.trim();
+    final zone = _model.textController2.text.trim();
+    final makeModel = _model.textController4.text.trim();
+    final plate = _model.textController5.text.trim();
+    final routeLabel =
+        [zone, makeModel].where((e) => e.isNotEmpty).join(' · ');
+
+    setState(() => _saving = true);
+    try {
+      await mock.updateBusRecord(
+        id:          _busId!,
+        name:        name.isEmpty ? null : name,
+        routeLabel:  routeLabel.isEmpty ? null : routeLabel,
+        plateNumber: plate.isEmpty ? null : plate,
+      );
+      if (!mounted) return;
+      _showSnack('Changes saved');
+      context.goNamed(BusManageWidget.routeName);
+    } catch (e) {
+      if (mounted) _showSnack('Could not save: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _deleteBus() async {
+    if (_saving || _busId == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete bus'),
+        content: const Text('This permanently removes the bus. Continue?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final mock = context.read<MockState>();
+    setState(() => _saving = true);
+    try {
+      await mock.deleteBus(_busId!);
+      if (!mounted) return;
+      _showSnack('Bus deleted');
+      context.goNamed(BusManageWidget.routeName);
+    } catch (e) {
+      if (mounted) _showSnack('Could not delete: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    _prefillFrom(mock);
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -963,10 +1054,8 @@ class _BusEditWidgetState extends State<BusEditWidget> {
                       padding:
                           EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                       child: FFButtonWidget(
-                        onPressed: () {
-                          print('Button pressed ...');
-                        },
-                        text: 'Save Changes',
+                        onPressed: _saving ? null : () => _saveChanges(),
+                        text: _saving ? 'Saving...' : 'Save Changes',
                         options: FFButtonOptions(
                           width: double.infinity,
                           height: 56.0,
@@ -1003,10 +1092,8 @@ class _BusEditWidgetState extends State<BusEditWidget> {
                       padding:
                           EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                       child: FFButtonWidget(
-                        onPressed: () {
-                          print('Button pressed ...');
-                        },
-                        text: 'Add Bus',
+                        onPressed: _saving ? null : () => _deleteBus(),
+                        text: 'Delete Bus',
                         options: FFButtonOptions(
                           width: double.infinity,
                           height: 56.0,

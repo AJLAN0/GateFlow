@@ -43,6 +43,14 @@ class StudentAddModel extends FlutterFlowModel<StudentAddWidget> {
   FocusNode? textFieldFocusNode4;
   TextEditingController? textController4;
   String? Function(BuildContext, String?)? textController4Validator;
+  FocusNode? textFieldFocusNode5;
+  TextEditingController? textController5;
+  FocusNode? textFieldFocusNode6;
+  TextEditingController? textController6;
+  FocusNode? textFieldFocusNode7;
+  TextEditingController? textController7;
+  FocusNode? textFieldFocusNode8;
+  TextEditingController? textController8;
 
   @override
   void initState(BuildContext context) {}
@@ -60,5 +68,14 @@ class StudentAddModel extends FlutterFlowModel<StudentAddWidget> {
 
     textFieldFocusNode4?.dispose();
     textController4?.dispose();
+
+    textFieldFocusNode5?.dispose();
+    textController5?.dispose();
+    textFieldFocusNode6?.dispose();
+    textController6?.dispose();
+    textFieldFocusNode7?.dispose();
+    textController7?.dispose();
+    textFieldFocusNode8?.dispose();
+    textController8?.dispose();
   }
 }
