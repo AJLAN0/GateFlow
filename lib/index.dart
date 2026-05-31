@@ -9,6 +9,8 @@ export '/bus_pages/assigned_studentslist/assigned_studentslist_widget.dart'
     show AssignedStudentslistWidget;
 export '/bus_pages/confirm_boarding/confirm_boarding_widget.dart'
     show ConfirmBoardingWidget;
+export '/bus_pages/driver_route_detail/driver_route_detail_widget.dart'
+    show DriverRouteDetailWidget;
 export '/bus_pages/update_student_status/update_student_status_widget.dart'
     show UpdateStudentStatusWidget;
 export '/loginpages/forgot_password/forgot_password_widget.dart'

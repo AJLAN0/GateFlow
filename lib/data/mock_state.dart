@@ -149,6 +149,7 @@ class Student {
     required this.grade,
     required this.status,
     this.busId,
+    this.dropOffLocation,
     this.lastMockUpdateLabel = '',
   });
   final String id;
@@ -156,6 +157,7 @@ class Student {
   final String grade;
   StudentStatus status;
   final String? busId;
+  final String? dropOffLocation;
   String lastMockUpdateLabel;
 }
 
@@ -258,6 +260,42 @@ class MockState extends ChangeNotifier {
 
   /// Real bus ID for the signed-in bus driver (null for other roles / demo).
   String? currentDriverBusId;
+
+  /// Resolved bus record for the signed-in driver.
+  Bus? get currentDriverBus {
+    final id = currentDriverBusId;
+    if (id != null) {
+      try {
+        return buses.firstWhere((b) => b.id == id);
+      } catch (_) {}
+    }
+    if (_role == UserRole.busDriver && buses.isNotEmpty) {
+      return buses.first;
+    }
+    return null;
+  }
+
+  /// Students assigned to the driver's bus only.
+  List<Student> get studentsOnDriverBus {
+    final busId = currentDriverBusId ?? currentDriverBus?.id;
+    if (busId == null || busId.isEmpty) return [];
+    return students.where((s) => s.busId == busId).toList();
+  }
+
+  void resolveDriverBusContext() {
+    if (_role != UserRole.busDriver) return;
+    if (currentDriverBusId != null) return;
+    final profileId = currentProfile?.id;
+    if (profileId != null) {
+      for (final b in buses) {
+        if (b.driverId == profileId) {
+          currentDriverBusId = b.id;
+          return;
+        }
+      }
+    }
+    if (buses.isNotEmpty) currentDriverBusId = buses.first.id;
+  }
 
   GuardianDemoProfile guardianProfile = const GuardianDemoProfile(
     fullName:           '',
@@ -406,6 +444,7 @@ class MockState extends ChangeNotifier {
       if (_role == UserRole.busDriver) {
         final myBus = dbBuses.where((b) => b.driverId == profile.id).toList();
         currentDriverBusId = myBus.isNotEmpty ? myBus.first.id : null;
+        resolveDriverBusContext();
       }
     }
 
@@ -590,16 +629,17 @@ class MockState extends ChangeNotifier {
   // ── Demo data fallback ────────────────────────────────────────────────────
   void _loadDemoData() {
     students = [
-      Student(id: 's1', name: 'Khalid Jr.',  grade: 'Grade 3', status: StudentStatus.atSchool,      busId: 'b1', lastMockUpdateLabel: '7:45 AM · Arrived school'),
+      Student(id: 's1', name: 'Khalid Jr.',  grade: 'Grade 3', status: StudentStatus.atSchool,      busId: 'b1', dropOffLocation: 'Zone B · Al Yasmin St 14', lastMockUpdateLabel: '7:45 AM · Arrived school'),
       Student(id: 's2', name: 'Aisha',        grade: 'Grade 1', status: StudentStatus.atHome,         lastMockUpdateLabel: 'Yesterday · Picked up by car'),
-      Student(id: 's3', name: 'Noah Khaled',  grade: 'Grade 1', status: StudentStatus.onBusToSchool, busId: 'b1', lastMockUpdateLabel: '7:50 AM · Boarded'),
-      Student(id: 's4', name: 'Lama Khaled',  grade: 'Grade 1', status: StudentStatus.atSchool,      busId: 'b1', lastMockUpdateLabel: '7:40 AM · Arrived school'),
+      Student(id: 's3', name: 'Noah Khaled',  grade: 'Grade 1', status: StudentStatus.onBusToSchool, busId: 'b1', dropOffLocation: 'Zone A · Block 5, Al Narjis', lastMockUpdateLabel: '7:50 AM · Boarded'),
+      Student(id: 's4', name: 'Lama Khaled',  grade: 'Grade 1', status: StudentStatus.atSchool,      busId: 'b1', dropOffLocation: 'Zone C · King Fahd Rd', lastMockUpdateLabel: '7:40 AM · Arrived school'),
     ];
     buses = [
       Bus(id: 'b1', name: 'Bus 12A', routeLabel: 'North Route · Zones A–D',
           driverName: 'Hassan (You)', driverId: 'd1',
           status: BusStatus.onRouteToHome, lastUpdateLabel: '2 min ago · GPS'),
     ];
+    currentDriverBusId = 'b1';
     parentDemoChildren = [
       DemoParentChild(id: 'pc1', name: 'Saad Khaled', grade: 'Grade 6', transport: DemoChildTransport.car),
       DemoParentChild(id: 'pc2', name: 'Sara Khaled', grade: 'Grade 6', transport: DemoChildTransport.car),
@@ -815,6 +855,7 @@ class MockState extends ChangeNotifier {
   // Keep the original demo-mode login for the quick-access chips
   void loginAs(UserRole role) {
     _role = role;
+    if (role == UserRole.busDriver) resolveDriverBusContext();
     notifyListeners();
   }
 

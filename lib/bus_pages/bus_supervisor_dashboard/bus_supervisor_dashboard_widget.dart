@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
 import '../../data/mock_state.dart';
+import '../../shared/driver_route.dart';
 import '../../shared/gateflow_colors.dart';
 import '../../shared/gateflow_mock_map.dart';
 import '../../shared/role_bottom_nav.dart';
@@ -48,24 +49,26 @@ class _BusSupervisorDashboardWidgetState
   @override
   Widget build(BuildContext context) {
     final mockState = context.watch<MockState>();
-    final bus =
-        mockState.buses.isNotEmpty ? mockState.buses.first : null;
+    mockState.resolveDriverBusContext();
+    final bus = mockState.currentDriverBus;
+    final riders = mockState.studentsOnDriverBus;
     final busTitle = bus == null
         ? 'GateFlow Bus'
-        : '${bus.name} · ${bus.routeLabel}';
+        : '${bus.name} · ${bus.routeLabel.split('·').first.trim()}';
 
-    final onBus = mockState.students
+    final onBus = riders
         .where((s) =>
             s.status == StudentStatus.onBusToHome ||
             s.status == StudentStatus.onBusToSchool)
         .length;
-    final droppedOff = mockState.students
+    final droppedOff = riders
         .where((s) =>
             s.status == StudentStatus.atHome ||
             s.status == StudentStatus.pickedUpByCar)
         .length;
-    final total = mockState.students.length;
-    final progress = total == 0 ? 0.0 : droppedOff / total;
+    final total = riders.length;
+    final routeProgress =
+        computeDriverRouteProgress(bus: bus, riders: riders);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -85,7 +88,7 @@ class _BusSupervisorDashboardWidgetState
               const SizedBox(height: 18),
               _BusStatsRow(total: total, onBus: onBus, dropped: droppedOff),
               const SizedBox(height: 16),
-              _RoutePreviewCard(bus: bus, completionPct: progress),
+              _RoutePreviewCard(bus: bus, routeProgress: routeProgress),
               const SizedBox(height: 14),
               _DriverPrimaryActions(),
             ],
@@ -331,21 +334,19 @@ class _BusStat extends StatelessWidget {
 }
 
 class _RoutePreviewCard extends StatelessWidget {
-  const _RoutePreviewCard({required this.bus, required this.completionPct});
+  const _RoutePreviewCard({required this.bus, required this.routeProgress});
 
   final Bus? bus;
-  final double completionPct;
+  final DriverRouteProgress routeProgress;
 
   @override
   Widget build(BuildContext context) {
-    final routeProgress =
-        completionPct.clamp(0.0, 1.0); // fraction of route completed (mock)
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () =>
-            context.pushNamed(BusStatusViewWidget.routeName),
+            context.pushNamed(DriverRouteDetailWidget.routeName),
         child: Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -367,50 +368,46 @@ class _RoutePreviewCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Route map (mock)',
+                    'Live route',
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: GateFlowColors.textPrimary,
                     ),
                   ),
-                  Row(
-                    children: [
-                      _LegendDot(color: GateFlowColors.success, label: 'Start'),
-                      const SizedBox(width: 12),
-                      _LegendDot(color: GateFlowColors.danger, label: 'End'),
-                    ],
+                  Text(
+                    '${routeProgress.stops.length} stops',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: GateFlowColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                'School → north zones · Live position is illustrative',
+                'Current segment · tap for full path',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: GateFlowColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 14),
-              GateFlowMockRouteMap(
-                progress: routeProgress,
-                height: 172,
-                routeLabel:
-                    bus?.lastUpdateLabel ?? 'GPS ping: mock · ${bus?.routeLabel ?? ''}',
-              ),
+              GateFlowRouteLegBar(progress: routeProgress),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'View full bus status',
+                    'View full driver route',
                     style: GoogleFonts.inter(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: GateFlowColors.brandPrimary,
                     ),
                   ),
-                  const Icon(Icons.open_in_new_rounded,
+                  const Icon(Icons.route_rounded,
                       size: 18, color: GateFlowColors.brandPrimary),
                 ],
               ),
@@ -418,35 +415,6 @@ class _RoutePreviewCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: GateFlowColors.textSecondary,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -14,9 +14,7 @@ import 'confirm_boarding_model.dart';
 
 export 'confirm_boarding_model.dart';
 
-/// Mock camera / QR scan flow for drivers (no real camera).
-///
-/// First scan in a session → On bus · Second → Dropped off · Third → alert.
+/// Driver scan flow: pick a bus rider → record real status via [MockState].
 class ConfirmBoardingWidget extends StatefulWidget {
   const ConfirmBoardingWidget({super.key});
 
@@ -32,7 +30,6 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  /// `camera` = scanning UI · `summary` = last outcome card.
   _ScanPhase _phase = _ScanPhase.camera;
   DriverScanOutcome? _outcome;
 
@@ -40,23 +37,24 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => ConfirmBoardingModel());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final sid = GoRouterState.of(context).uri.queryParameters['sid'];
+      if (sid != null && sid.isNotEmpty && mounted) {
+        final mock = context.read<MockState>();
+        mock.resolveDriverBusContext();
+        try {
+          final s = mock.studentsOnDriverBus.firstWhere((e) => e.id == sid);
+          _simulateScanFor(mock, s);
+        } catch (_) {}
+      }
+    });
   }
 
   @override
   void dispose() {
     _model.dispose();
     super.dispose();
-  }
-
-  List<Student> _assigned(MockState m) {
-    final busId = m.currentDriverBusId;
-    if (busId == null || busId.isEmpty) return [];
-    return m.students.where((s) => s.busId == busId).toList();
-  }
-
-  Student? _pickDefault(MockState m) {
-    final list = _assigned(m);
-    return list.isNotEmpty ? list.first : null;
   }
 
   void _applyOutcome(DriverScanOutcome o) {
@@ -71,29 +69,72 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
     _applyOutcome(o);
   }
 
-  Future<void> _openManualPicker(BuildContext context) async {
-    if (!context.mounted) return;
-    context.pushNamed(AssignedStudentslistWidget.routeName);
-  }
+  Future<void> _pickStudentAndScan(BuildContext context, MockState mock) async {
+    mock.resolveDriverBusContext();
+    final list = mock.studentsOnDriverBus;
+    if (list.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No students assigned to your bus yet.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-  String _statusReadable(StudentStatus s) {
-    switch (s) {
-      case StudentStatus.atHome:
-        return 'At home';
-      case StudentStatus.onBusToSchool:
-        return 'On bus (to school)';
-      case StudentStatus.atSchool:
-        return 'At school';
-      case StudentStatus.onBusToHome:
-        return 'On bus (home)';
-      case StudentStatus.pickedUpByCar:
-        return 'Car pickup';
+    final picked = await showModalBottomSheet<Student>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select student to scan',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...list.map((s) => ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: GateFlowColors.brandPrimary,
+                        child: Text(
+                          s.name.isNotEmpty ? s.name[0] : '?',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      title: Text(s.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text('${s.grade} · ${s.status.name}'),
+                      onTap: () => Navigator.pop(ctx, s),
+                    )),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      _simulateScanFor(mock, picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final mock = context.watch<MockState>();
+    mock.resolveDriverBusContext();
+    final riderCount = mock.studentsOnDriverBus.length;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -132,21 +173,11 @@ class _ConfirmBoardingWidgetState extends State<ConfirmBoardingWidget> {
                   }),
                 )
               : _CameraPane(
-                  onSimulate: () {
-                    final s = _pickDefault(mock);
-                    if (s == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Assign students to the bus route first.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      return;
-                    }
-                    _simulateScanFor(mock, s);
-                  },
-                  onManual: () => _openManualPicker(context),
+                  riderCount: riderCount,
+                  onScan: () => _pickStudentAndScan(context, mock),
+                  onManual: () => context.pushNamed(
+                    AssignedStudentslistWidget.routeName,
+                  ),
                 ),
         ),
       ),
@@ -158,11 +189,13 @@ enum _ScanPhase { camera, summary }
 
 class _CameraPane extends StatelessWidget {
   const _CameraPane({
-    required this.onSimulate,
+    required this.riderCount,
+    required this.onScan,
     required this.onManual,
   });
 
-  final VoidCallback onSimulate;
+  final int riderCount;
+  final VoidCallback onScan;
   final VoidCallback onManual;
 
   @override
@@ -176,7 +209,7 @@ class _CameraPane extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Align the QR code inside the frame',
+                  'Scan updates student status on your bus ($riderCount riders)',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 14,
@@ -191,34 +224,13 @@ class _CameraPane extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFF111827),
                       borderRadius: BorderRadius.circular(22),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 22,
-                          offset: Offset(0, 12),
-                        ),
-                      ],
                     ),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(22),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.06),
-                                  Colors.black.withValues(alpha: 0.35),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.photo_camera_outlined,
-                            size: 56, color: Colors.white.withValues(alpha: 0.35)),
+                        Icon(Icons.qr_code_scanner_rounded,
+                            size: 72,
+                            color: Colors.white.withValues(alpha: 0.35)),
                         Center(
                           child: Container(
                             width: 220,
@@ -226,7 +238,8 @@ class _CameraPane extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: GateFlowColors.brandAccent.withValues(alpha: 0.95),
+                                color: GateFlowColors.brandAccent
+                                    .withValues(alpha: 0.95),
                                 width: 3,
                               ),
                             ),
@@ -237,7 +250,7 @@ class _CameraPane extends StatelessWidget {
                           left: 24,
                           right: 24,
                           child: Text(
-                            'Camera preview (mock) · Indoor lighting simulated',
+                            'QR hardware optional · pick rider to record boarding/drop-off',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                               color: Colors.white70,
@@ -251,8 +264,9 @@ class _CameraPane extends StatelessWidget {
                 ),
                 const SizedBox(height: 22),
                 FFButtonWidget(
-                  onPressed: onSimulate,
-                  text: 'Simulate scan',
+                  onPressed: onScan,
+                  text: 'Scan student',
+                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
                   options: FFButtonOptions(
                     width: double.infinity,
                     height: 54,
@@ -287,12 +301,10 @@ class _CameraPane extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: onManual,
-              icon: const Icon(Icons.edit_note_rounded, size: 20),
+              icon: const Icon(Icons.list_alt_rounded, size: 20),
               label: Text(
-                'Manual Scan',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700,
-                ),
+                'Pick from student list',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: GateFlowColors.brandPrimary,
@@ -335,13 +347,6 @@ class _SummaryPane extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: GateFlowColors.divider),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0F0C3451),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,46 +368,31 @@ class _SummaryPane extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: GateFlowColors.textPrimary,
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  outcome.studentName,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text(outcome.studentName,
+                    style: GoogleFonts.inter(
+                        fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                Text(
-                  outcome.detail,
-                  style: GoogleFonts.inter(
-                    fontSize: 13.5,
-                    color: GateFlowColors.textSecondary,
-                    height: 1.35,
-                  ),
-                ),
+                Text(outcome.detail,
+                    style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        color: GateFlowColors.textSecondary,
+                        height: 1.35)),
                 const SizedBox(height: 14),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
                     StatusPill(
-                      label: outcome.warning ? 'Alert' : 'Updated',
+                      label: outcome.warning ? 'Alert' : 'Status saved',
                       tone: tone,
-                      icon: outcome.warning
-                          ? Icons.report_gmailerrorred_outlined
-                          : Icons.check_circle_outline,
                     ),
-                    StatusPill(
-                      label: time,
-                      tone: StatusTone.neutral,
-                      icon: Icons.schedule_rounded,
-                    ),
+                    StatusPill(label: time, tone: StatusTone.neutral),
                   ],
                 ),
                 if (outcome.showStaffAlert) ...[
@@ -413,17 +403,10 @@ class _SummaryPane extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF4E0),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: GateFlowColors.warning.withValues(alpha: 0.45),
-                      ),
                     ),
                     child: Text(
-                      'School staff has been alerted in Operations (mock).',
-                      style: GoogleFonts.inter(
-                        fontSize: 12.8,
-                        color: GateFlowColors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      'School staff notified via operational alert.',
+                      style: GoogleFonts.inter(fontSize: 12.8),
                     ),
                   ),
                 ],

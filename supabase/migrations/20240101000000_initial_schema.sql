@@ -425,7 +425,8 @@ CREATE POLICY "parent: create request" ON pickup_requests
 
 CREATE POLICY "staff: view school requests" ON pickup_requests
   FOR SELECT USING (
-    student_id IN (SELECT id FROM students WHERE school_id = my_school_id())
+    my_role() = 'school_staff'
+    AND student_id IN (SELECT id FROM students WHERE school_id = my_school_id())
   );
 
 CREATE POLICY "staff: update requests" ON pickup_requests
@@ -444,6 +445,12 @@ CREATE POLICY "staff: manage schedules" ON daily_schedules
 -- --- notifications ---
 CREATE POLICY "own notifications" ON notifications
   FOR ALL USING (user_id = auth.uid());
+
+CREATE POLICY "staff: send school notifications" ON notifications
+  FOR INSERT WITH CHECK (
+    my_role() = 'school_staff'
+    AND user_id IN (SELECT id FROM profiles WHERE school_id = my_school_id())
+  );
 
 -- --- operational_alerts ---
 CREATE POLICY "staff/driver: view alerts" ON operational_alerts

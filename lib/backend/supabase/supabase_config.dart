@@ -16,6 +16,13 @@ const String kSupabaseAnonKey =
 const bool isSupabaseConfigured =
     kSupabaseUrl.length > 0 && kSupabaseAnonKey.length > 0;
 
+/// Headless integration tests inject a plain [SupabaseClient] (no Flutter auth storage).
+SupabaseClient? _integrationTestClient;
+
+void setIntegrationTestClient(SupabaseClient? client) {
+  _integrationTestClient = client;
+}
+
 Future<void> initSupabase() async {
   await Supabase.initialize(
     url:     kSupabaseUrl,
@@ -26,4 +33,8 @@ Future<void> initSupabase() async {
   );
 }
 
-SupabaseClient get supabase => Supabase.instance.client;
+SupabaseClient get supabase {
+  final testClient = _integrationTestClient;
+  if (testClient != null) return testClient;
+  return Supabase.instance.client;
+}

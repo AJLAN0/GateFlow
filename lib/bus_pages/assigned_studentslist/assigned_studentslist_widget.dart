@@ -91,9 +91,7 @@ class _AssignedStudentslistWidgetState
   Iterable<Student> _visible(MockState mock) {
     final q =
         (_model.textController?.text ?? '').trim().toLowerCase();
-    final driverBusId = mock.currentDriverBusId ?? '';
-    return mock.students.where((s) {
-      if ((s.busId ?? '') != driverBusId) return false;
+    return mock.studentsOnDriverBus.where((s) {
       if (!_passesStatus(s)) return false;
       if (q.isEmpty) return true;
       final bundle = '${s.name} ${s.grade} ${s.id}'.toLowerCase();
@@ -111,6 +109,8 @@ class _AssignedStudentslistWidgetState
   @override
   Widget build(BuildContext context) {
     final mock = context.watch<MockState>();
+    mock.resolveDriverBusContext();
+    final bus = mock.currentDriverBus;
     final list = _visible(mock).toList();
 
     return GestureDetector(
@@ -202,7 +202,7 @@ class _AssignedStudentslistWidgetState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '${list.length} rider${list.length == 1 ? '' : 's'} on ${mock.buses.where((b) => b.id == mock.currentDriverBusId).map((b) => b.name).firstOrNull ?? 'your bus'}',
+                  '${list.length} rider${list.length == 1 ? '' : 's'} on ${bus?.name ?? 'your bus'}',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -230,7 +230,7 @@ class _AssignedStudentslistWidgetState
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(16),
                                 onTap: () => context.pushNamed(
-                                  UpdateStudentStatusWidget.routeName,
+                                  ConfirmBoardingWidget.routeName,
                                   queryParameters: {'sid': s.id},
                                 ),
                                 child: Container(
@@ -266,7 +266,8 @@ class _AssignedStudentslistWidgetState
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              '${s.grade} · Route North',
+                                              s.dropOffLocation ??
+                                                  '${s.grade} · ${bus?.routeLabel.split('·').first.trim() ?? 'Route'}',
                                               style: GoogleFonts.inter(
                                                 fontSize: 12.5,
                                                 color: GateFlowColors

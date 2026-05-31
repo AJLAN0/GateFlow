@@ -93,6 +93,11 @@ GoRouter createRouter(
           builder: (context, params) => ConfirmBoardingWidget(),
         ),
         FFRoute(
+          name: DriverRouteDetailWidget.routeName,
+          path: DriverRouteDetailWidget.routePath,
+          builder: (context, params) => DriverRouteDetailWidget(),
+        ),
+        FFRoute(
           name: UpdateStudentStatusWidget.routeName,
           path: UpdateStudentStatusWidget.routePath,
           builder: (context, params) => UpdateStudentStatusWidget(),
