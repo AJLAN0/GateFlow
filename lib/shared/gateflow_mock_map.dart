@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 
 import 'gateflow_colors.dart';
 import 'driver_route.dart';
+import 'gateflow_location_picker.dart';
 
 /// Mock route map: path from start → end with bus marker along progress [0–1].
 /// No external map SDK or API keys.
@@ -180,66 +183,133 @@ class _RouteMapPainter extends CustomPainter {
       oldDelegate.progress != progress;
 }
 
-/// Compact “pick on map” preview for schedules / address forms (mock).
+/// Compact map preview for address forms. Shows real map tiles; tap to open picker.
 class GateFlowMiniLocationMap extends StatelessWidget {
   const GateFlowMiniLocationMap({
     super.key,
     required this.selectedLabel,
     required this.onUpdateLocation,
+    this.hasLocation = false,
+    this.latitude,
+    this.longitude,
   });
 
   final String selectedLabel;
   final VoidCallback onUpdateLocation;
+  final bool hasLocation;
+  final double? latitude;
+  final double? longitude;
+
+  LatLng get _center {
+    if (latitude != null && longitude != null) {
+      return LatLng(latitude!, longitude!);
+    }
+    return GateFlowLocationPicker.defaultCenter;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            height: 140,
-            width: double.infinity,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        GateFlowColors.surface,
-                        GateFlowColors.brandPrimary.withValues(alpha: 0.07),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onUpdateLocation,
+            borderRadius: BorderRadius.circular(16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 180,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    FlutterMap(
+                      options: MapOptions(
+                        initialCenter: _center,
+                        initialZoom: hasLocation ? 15 : 12,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.gateflow.app',
+                        ),
+                        if (hasLocation && latitude != null && longitude != null)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(latitude!, longitude!),
+                                width: 40,
+                                height: 40,
+                                child: Icon(
+                                  Icons.location_pin,
+                                  size: 40,
+                                  color: GateFlowColors.brandPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
-                  ),
-                ),
-                CustomPaint(painter: _MiniGridPainter()),
-                Center(
-                  child: Icon(Icons.location_pin,
-                      size: 44, color: GateFlowColors.brandPrimary),
-                ),
-                Positioned(
-                  right: 10,
-                  bottom: 10,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Mock map',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: GateFlowColors.textSecondary,
+                    Positioned(
+                      left: 10,
+                      top: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          hasLocation ? 'Location set' : 'Tap map to pick',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: GateFlowColors.textSecondary,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    if (!hasLocation)
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.touch_app_rounded,
+                                  size: 16, color: Colors.white),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Open map',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -254,7 +324,9 @@ class GateFlowMiniLocationMap extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          selectedLabel.isEmpty ? 'Tap update to assign a mock pin' : selectedLabel,
+          selectedLabel.isEmpty
+              ? 'Tap Update Location to pick on map'
+              : selectedLabel,
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,

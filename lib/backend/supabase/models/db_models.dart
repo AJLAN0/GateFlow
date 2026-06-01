@@ -152,6 +152,9 @@ class DbStudent {
   final String? busId;
   final String? lastUpdateLabel;
   final String? profilePhotoUrl;
+  final String? pickupLocationLabel;
+  final double? latitude;
+  final double? longitude;
   final DateTime createdAt;
 
   const DbStudent({
@@ -164,20 +167,26 @@ class DbStudent {
     this.busId,
     this.lastUpdateLabel,
     this.profilePhotoUrl,
+    this.pickupLocationLabel,
+    this.latitude,
+    this.longitude,
     required this.createdAt,
   });
 
   factory DbStudent.fromJson(Map<String, dynamic> j) => DbStudent(
-        id:               j['id'] as String,
-        name:             j['name'] as String,
-        grade:            j['grade'] as String,
-        schoolId:         j['school_id'] as String,
-        status:           j['status'] as String,
-        transportType:    j['transport_type'] as String,
-        busId:            j['bus_id'] as String?,
-        lastUpdateLabel:  j['last_update_label'] as String?,
-        profilePhotoUrl:  j['profile_photo_url'] as String?,
-        createdAt:        DateTime.parse(j['created_at'] as String),
+        id:                   j['id'] as String,
+        name:                 j['name'] as String,
+        grade:                j['grade'] as String,
+        schoolId:             j['school_id'] as String,
+        status:               j['status'] as String,
+        transportType:        j['transport_type'] as String,
+        busId:                j['bus_id'] as String?,
+        lastUpdateLabel:      j['last_update_label'] as String?,
+        profilePhotoUrl:      j['profile_photo_url'] as String?,
+        pickupLocationLabel:  j['pickup_location_label'] as String?,
+        latitude:             (j['latitude'] as num?)?.toDouble(),
+        longitude:            (j['longitude'] as num?)?.toDouble(),
+        createdAt:            DateTime.parse(j['created_at'] as String),
       );
 
   Map<String, dynamic> toInsertJson() => {
@@ -188,6 +197,10 @@ class DbStudent {
         'transport_type':    transportType,
         if (busId != null)   'bus_id': busId,
         'last_update_label': lastUpdateLabel,
+        if (pickupLocationLabel != null)
+          'pickup_location_label': pickupLocationLabel,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       };
 }
 

@@ -746,6 +746,7 @@ class MockState extends ChangeNotifier {
         grade:                db.grade,
         status:               _studentStatusFromDb(db.status),
         busId:                db.busId,
+        dropOffLocation:      db.pickupLocationLabel,
         lastMockUpdateLabel:  db.lastUpdateLabel ?? '',
       );
 
@@ -1048,17 +1049,23 @@ class MockState extends ChangeNotifier {
     String transportType = 'car',
     String? busId,
     String? parentId,
+    String? pickupLocationLabel,
+    double? latitude,
+    double? longitude,
   }) async {
     final schoolId = _schoolId;
     if (!isSupabaseConfigured || schoolId == null) {
       throw StateError('No school context — cannot add student.');
     }
     final created = await StudentService.instance.add(
-      name:          name,
-      grade:         grade,
-      schoolId:      schoolId,
-      transportType: transportType,
-      busId:         (busId != null && busId.isNotEmpty) ? busId : null,
+      name:                  name,
+      grade:                 grade,
+      schoolId:              schoolId,
+      transportType:         transportType,
+      busId:                 (busId != null && busId.isNotEmpty) ? busId : null,
+      pickupLocationLabel:   pickupLocationLabel,
+      latitude:              latitude,
+      longitude:             longitude,
     );
     if (parentId != null && parentId.isNotEmpty) {
       await StudentService.instance

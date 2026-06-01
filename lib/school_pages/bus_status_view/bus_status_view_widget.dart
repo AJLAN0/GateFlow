@@ -6,13 +6,15 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '../../data/mock_state.dart';
+import '../../shared/driver_route.dart';
 import '../../shared/gateflow_colors.dart';
+import '../../shared/gateflow_mock_map.dart';
 import '../../shared/status_pill.dart';
 import 'bus_status_view_model.dart';
 
 export 'bus_status_view_model.dart';
 
-/// School-side operational snapshot for a focal bus route (mock data).
+/// School-side operational snapshot for a selected bus (live route + riders).
 class BusStatusViewWidget extends StatefulWidget {
   const BusStatusViewWidget({super.key});
 
@@ -52,11 +54,38 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
     super.dispose();
   }
 
+  Bus? _resolveBus(MockState mock) {
+    final bid = GoRouterState.of(context).uri.queryParameters['bid'];
+    if (bid != null && bid.isNotEmpty) {
+      for (final b in mock.buses) {
+        if (b.id == bid) return b;
+      }
+    }
+    return mock.buses.isNotEmpty ? mock.buses.first : null;
+  }
+
+  List<Student> _ridersOnBus(MockState mock, Bus bus) =>
+      mock.students.where((s) => s.busId == bus.id).toList();
+
+  StatusTone _statusTone(BusStatus status) {
+    switch (status) {
+      case BusStatus.onRouteToSchool:
+      case BusStatus.onRouteToHome:
+        return StatusTone.pending;
+      case BusStatus.stationary:
+        return StatusTone.neutral;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final mock = context.watch<MockState>();
-    final bus = mock.buses.isNotEmpty ? mock.buses.first : null;
-    final assigned = mock.students.where((s) => s.busId == bus?.id).toList();
+    final bus = _resolveBus(mock);
+    final assigned = bus == null ? <Student>[] : _ridersOnBus(mock, bus);
+    final routeProgress = computeDriverRouteProgress(
+      bus: bus,
+      riders: assigned,
+    );
     final onBus = assigned
         .where((s) =>
             s.status == StudentStatus.onBusToHome ||
@@ -149,7 +178,7 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                                         ),
                                       ),
                                       Text(
-                                        'Driver · ${bus.driverName}',
+                                        'Driver · ${mock.busDriverName(bus)}',
                                         style: GoogleFonts.inter(
                                           fontSize: 12,
                                           color: GateFlowColors.textTertiary,
@@ -160,15 +189,14 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                                 ),
                                 StatusPill(
                                   label: _busStatusPhrase(bus.status),
-                                  tone: StatusTone.pending,
+                                  tone: _statusTone(bus.status),
                                   icon: Icons.departure_board_outlined,
                                 ),
                               ],
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              bus.lastUpdateLabel ??
-                                  'Last update synced (mock)',
+                              bus.lastUpdateLabel ?? 'Status synced from backend',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -180,7 +208,7 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'Route preview',
+                        'Live route',
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -189,28 +217,92 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        height: 110,
                         width: double.infinity,
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(color: GateFlowColors.divider),
-                          gradient: LinearGradient(
-                            colors: [
-                              GateFlowColors.surface,
-                              GateFlowColors.brandPrimary.withValues(alpha: .05),
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Static corridor map · ${bus.routeLabel}',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 12.5,
-                              color: GateFlowColors.textSecondary,
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0F000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
                             ),
-                          ),
+                          ],
                         ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  routeProgress.legSummary,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: GateFlowColors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  '${routeProgress.stops.length} stops',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: GateFlowColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            GateFlowRouteLegBar(progress: routeProgress),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Icon(Icons.people_alt_outlined,
+                                    size: 16, color: GateFlowColors.brandPrimary),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${routeProgress.completedDropoffs} of ${routeProgress.totalRiders} riders delivered · ${routeProgress.overallPercent}%',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      color: GateFlowColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Route stops',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: GateFlowColors.brandPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Same path the driver sees — student drop-off points on this bus',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: GateFlowColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: GateFlowColors.divider),
+                        ),
+                        child: GateFlowRouteStepTimeline(progress: routeProgress),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -252,12 +344,12 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                       const SizedBox(height: 8),
                       if (assigned.isEmpty)
                         Text(
-                          'No riders linked in mock data.',
+                          'No students assigned to this bus yet.',
                           style: GoogleFonts.inter(
                               color: GateFlowColors.textTertiary),
                         )
                       else
-                        ...assigned.take(4).map(
+                        ...assigned.map(
                               (s) => Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(12),
@@ -286,6 +378,15 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                                               color: GateFlowColors.textSecondary,
                                             ),
                                           ),
+                                          if (s.dropOffLocation != null &&
+                                              s.dropOffLocation!.isNotEmpty)
+                                            Text(
+                                              s.dropOffLocation!,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 11,
+                                                color: GateFlowColors.textTertiary,
+                                              ),
+                                            ),
                                         ],
                                       ),
                                     ),
@@ -293,14 +394,6 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
                                 ),
                               ),
                             ),
-                      if (assigned.length > 4)
-                        Text(
-                          '+ ${assigned.length - 4} more students',
-                          style: GoogleFonts.inter(
-                            fontSize: 11.5,
-                            color: GateFlowColors.textTertiary,
-                          ),
-                        ),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

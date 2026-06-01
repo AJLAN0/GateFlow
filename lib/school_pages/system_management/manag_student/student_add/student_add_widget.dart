@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../../data/mock_state.dart';
+import '../../../../../shared/gateflow_location_picker.dart';
 import '../../../../../shared/gateflow_mock_map.dart';
 import 'student_add_model.dart';
 export 'student_add_model.dart';
@@ -30,7 +31,10 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<String> _busNameOptions = [];
-  String _locationSummary = 'North campus · Gate B (mock)';
+  String _locationSummary = '';
+  double? _selectedLat;
+  double? _selectedLng;
+  bool _pickingLocation = false;
 
   @override
   void initState() {
@@ -116,11 +120,18 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
     setState(() => _saving = true);
     try {
       await mock.addStudent(
-        name:          name,
-        grade:         grade,
-        transportType: transport,
-        busId:         busId,
-        parentId:      parentId,
+        name:                  name,
+        grade:                 grade,
+        transportType:         transport,
+        busId:                 busId,
+        parentId:              parentId,
+        pickupLocationLabel:   _locationSummary.isNotEmpty
+            ? _locationSummary
+            : _model.textController4.text.trim().isNotEmpty
+                ? _model.textController4.text.trim()
+                : null,
+        latitude:              _selectedLat,
+        longitude:             _selectedLng,
       );
       if (!mounted) return;
       final linkNote = (parentNationalId.isNotEmpty && parentId == null)
@@ -139,6 +150,49 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  void _applyLocation(GateFlowSelectedLocation loc) {
+    safeSetState(() {
+      _selectedLat = loc.latitude;
+      _selectedLng = loc.longitude;
+      _locationSummary = loc.label;
+      _model.textController4?.text =
+          '${loc.label} (${loc.coordinatesLabel})';
+    });
+  }
+
+  Future<void> _openMapPicker() async {
+    if (_pickingLocation) return;
+    setState(() => _pickingLocation = true);
+    try {
+      GateFlowSelectedLocation? initial;
+      if (_selectedLat != null && _selectedLng != null) {
+        initial = GateFlowSelectedLocation(
+          latitude: _selectedLat!,
+          longitude: _selectedLng!,
+          label: _locationSummary,
+        );
+      }
+      final picked = await GateFlowLocationPicker.pickOnMap(
+        context,
+        initial: initial,
+      );
+      if (picked != null) _applyLocation(picked);
+    } finally {
+      if (mounted) setState(() => _pickingLocation = false);
+    }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    if (_pickingLocation) return;
+    setState(() => _pickingLocation = true);
+    try {
+      final loc = await GateFlowLocationPicker.currentLocation(context);
+      if (loc != null) _applyLocation(loc);
+    } finally {
+      if (mounted) setState(() => _pickingLocation = false);
+    }
   }
 
   @override
@@ -1355,14 +1409,10 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                   ),
                                   GateFlowMiniLocationMap(
                                     selectedLabel: _locationSummary,
-                                    onUpdateLocation: () => safeSetState(() {
-                                      final t = TimeOfDay.now()
-                                          .format(context);
-                                      _locationSummary =
-                                          'Pinned · Sector 4 · updated $t (mock)';
-                                      _model.textController4?.text =
-                                          _locationSummary;
-                                    }),
+                                    hasLocation: _selectedLat != null,
+                                    latitude: _selectedLat,
+                                    longitude: _selectedLng,
+                                    onUpdateLocation: _openMapPicker,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
@@ -1552,7 +1602,13 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                                 .asValidator(context),
                                           ),
                                         ),
-                                        Container(
+                                        InkWell(
+                                          onTap: _pickingLocation
+                                              ? null
+                                              : _useCurrentLocation,
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          child: Container(
                                           width: 52.0,
                                           height: 52.0,
                                           decoration: BoxDecoration(
@@ -1563,12 +1619,23 @@ class _StudentAddWidgetState extends State<StudentAddWidget> {
                                           child: Align(
                                             alignment:
                                                 AlignmentDirectional(0.0, 0.0),
-                                            child: Icon(
-                                              Icons.my_location_rounded,
-                                              color: Colors.white,
-                                              size: 24.0,
-                                            ),
+                                            child: _pickingLocation
+                                                ? SizedBox(
+                                                    width: 22,
+                                                    height: 22,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
+                                                  )
+                                                : Icon(
+                                                    Icons.my_location_rounded,
+                                                    color: Colors.white,
+                                                    size: 24.0,
+                                                  ),
                                           ),
+                                        ),
                                         ),
                                       ].divide(SizedBox(width: 10.0)),
                                     ),
