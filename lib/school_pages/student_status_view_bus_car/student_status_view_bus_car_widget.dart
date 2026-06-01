@@ -4,8 +4,11 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
+import '../../data/mock_state.dart';
 import 'student_status_view_bus_car_model.dart';
 export 'student_status_view_bus_car_model.dart';
 
@@ -41,6 +44,14 @@ class _StudentStatusViewBusCarWidgetState
 
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final sid = GoRouterState.of(context).uri.queryParameters['sid'];
+    Student? student;
+    if (sid != null) {
+      try {
+        student = mock.students.firstWhere((s) => s.id == sid);
+      } catch (_) {}
+    }
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -54,13 +65,13 @@ class _StudentStatusViewBusCarWidgetState
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
-            borderRadius: 30.0,
-            borderWidth: 1.0,
-            buttonSize: 60.0,
+            borderRadius: 30,
+            borderWidth: 1,
+            buttonSize: 60,
             icon: Icon(
               Icons.arrow_back_rounded,
               color: Colors.white,
-              size: 30.0,
+              size: 30,
             ),
             onPressed: () async {
               context.safePop();
@@ -76,7 +87,7 @@ class _StudentStatusViewBusCarWidgetState
                         FlutterFlowTheme.of(context).titleLarge.fontStyle,
                   ),
                   color: FlutterFlowTheme.of(context).secondaryBackground,
-                  fontSize: 24.0,
+                  fontSize: 24,
                   letterSpacing: 0.0,
                   fontWeight:
                       FlutterFlowTheme.of(context).titleLarge.fontWeight,
@@ -85,12 +96,12 @@ class _StudentStatusViewBusCarWidgetState
           ),
           actions: [],
           centerTitle: false,
-          elevation: 2.0,
+          elevation: 2,
         ),
         body: SafeArea(
           top: true,
           child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+            padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.max,
@@ -100,14 +111,14 @@ class _StudentStatusViewBusCarWidgetState
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: FlutterFlowTheme.of(context).secondaryBackground,
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: FlutterFlowTheme.of(context).alternate,
-                        width: 1.0,
+                        width: 1,
                       ),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(16),
                       child: Column(
                         mainAxisSize: MainAxisSize.max,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,8 +127,8 @@ class _StudentStatusViewBusCarWidgetState
                             mainAxisSize: MainAxisSize.max,
                             children: [
                               Container(
-                                width: 60.0,
-                                height: 60.0,
+                                width: 60,
+                                height: 60,
                                 decoration: BoxDecoration(
                                   color: Color(0xFF0C3451),
                                   shape: BoxShape.circle,
@@ -125,7 +136,7 @@ class _StudentStatusViewBusCarWidgetState
                                 child: Icon(
                                   Icons.person_rounded,
                                   color: Colors.white,
-                                  size: 24.0,
+                                  size: 24,
                                 ),
                               ),
                               Expanded(
@@ -134,7 +145,7 @@ class _StudentStatusViewBusCarWidgetState
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Saleh Ahmed',
+                                      student?.name ?? 'Unknown student',
                                       style: FlutterFlowTheme.of(context)
                                           .titleMedium
                                           .override(
@@ -154,7 +165,9 @@ class _StudentStatusViewBusCarWidgetState
                                           ),
                                     ),
                                     Text(
-                                      'Grade 8 • ID: ST2024-089',
+                                      student != null
+                                          ? '${student.grade} • ID: ${student.id}'
+                                          : '—',
                                       style: FlutterFlowTheme.of(context)
                                           .bodyMedium
                                           .override(
@@ -181,12 +194,12 @@ class _StudentStatusViewBusCarWidgetState
                                                     .fontStyle,
                                           ),
                                     ),
-                                  ].divide(SizedBox(height: 4.0)),
+                                  ].divide(SizedBox(height: 4)),
                                 ),
                               ),
-                            ].divide(SizedBox(width: 12.0)),
+                            ].divide(SizedBox(width: 12)),
                           ),
-                        ].divide(SizedBox(height: 12.0)),
+                        ].divide(SizedBox(height: 12)),
                       ),
                     ),
                   ),
@@ -216,31 +229,31 @@ class _StudentStatusViewBusCarWidgetState
                           Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: Color(0xFF0C3451),
-                                width: 2.0,
+                                width: 2,
                               ),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(16.0),
+                              padding: EdgeInsets.all(16),
                               child: Row(
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
                                   Container(
-                                    width: 48.0,
-                                    height: 48.0,
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
                                       color: Color(0xFF0C3451),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      alignment: AlignmentDirectional(0, 0),
                                       child: Icon(
                                         Icons.cancel_sharp,
                                         color:
                                             FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
+                                        size: 24,
                                       ),
                                     ),
                                   ),
@@ -302,15 +315,15 @@ class _StudentStatusViewBusCarWidgetState
                                                         .fontStyle,
                                               ),
                                         ),
-                                      ].divide(SizedBox(height: 4.0)),
+                                      ].divide(SizedBox(height: 4)),
                                     ),
                                   ),
                                   Icon(
                                     Icons.check_circle,
                                     color: Color(0xFF0C3451),
-                                    size: 24.0,
+                                    size: 24,
                                   ),
-                                ].divide(SizedBox(width: 12.0)),
+                                ].divide(SizedBox(width: 12)),
                               ),
                             ),
                           ),
@@ -319,32 +332,32 @@ class _StudentStatusViewBusCarWidgetState
                             decoration: BoxDecoration(
                               color: FlutterFlowTheme.of(context)
                                   .secondaryBackground,
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: FlutterFlowTheme.of(context).alternate,
-                                width: 1.0,
+                                width: 1,
                               ),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(16.0),
+                              padding: EdgeInsets.all(16),
                               child: Row(
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
                                   Container(
-                                    width: 48.0,
-                                    height: 48.0,
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
                                       color: FlutterFlowTheme.of(context)
                                           .secondaryText,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      alignment: AlignmentDirectional(0, 0),
                                       child: Icon(
                                         Icons.menu_book,
                                         color:
                                             FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
+                                        size: 24,
                                       ),
                                     ),
                                   ),
@@ -406,10 +419,10 @@ class _StudentStatusViewBusCarWidgetState
                                                         .fontStyle,
                                               ),
                                         ),
-                                      ].divide(SizedBox(height: 4.0)),
+                                      ].divide(SizedBox(height: 4)),
                                     ),
                                   ),
-                                ].divide(SizedBox(width: 12.0)),
+                                ].divide(SizedBox(width: 12)),
                               ),
                             ),
                           ),
@@ -418,32 +431,32 @@ class _StudentStatusViewBusCarWidgetState
                             decoration: BoxDecoration(
                               color: FlutterFlowTheme.of(context)
                                   .secondaryBackground,
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: FlutterFlowTheme.of(context).alternate,
-                                width: 1.0,
+                                width: 1,
                               ),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(16.0),
+                              padding: EdgeInsets.all(16),
                               child: Row(
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
                                   Container(
-                                    width: 48.0,
-                                    height: 48.0,
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
                                       color: FlutterFlowTheme.of(context)
                                           .secondaryText,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      alignment: AlignmentDirectional(0, 0),
                                       child: Icon(
                                         Icons.person_add,
                                         color:
                                             FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
+                                        size: 24,
                                       ),
                                     ),
                                   ),
@@ -505,10 +518,10 @@ class _StudentStatusViewBusCarWidgetState
                                                         .fontStyle,
                                               ),
                                         ),
-                                      ].divide(SizedBox(height: 4.0)),
+                                      ].divide(SizedBox(height: 4)),
                                     ),
                                   ),
-                                ].divide(SizedBox(width: 12.0)),
+                                ].divide(SizedBox(width: 12)),
                               ),
                             ),
                           ),
@@ -517,32 +530,32 @@ class _StudentStatusViewBusCarWidgetState
                             decoration: BoxDecoration(
                               color: FlutterFlowTheme.of(context)
                                   .secondaryBackground,
-                              borderRadius: BorderRadius.circular(12.0),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: FlutterFlowTheme.of(context).alternate,
-                                width: 1.0,
+                                width: 1,
                               ),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(16.0),
+                              padding: EdgeInsets.all(16),
                               child: Row(
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
                                   Container(
-                                    width: 48.0,
-                                    height: 48.0,
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
                                       color: FlutterFlowTheme.of(context)
                                           .secondaryText,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      alignment: AlignmentDirectional(0, 0),
                                       child: Icon(
                                         Icons.check_circle,
                                         color:
                                             FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
+                                        size: 24,
                                       ),
                                     ),
                                   ),
@@ -604,21 +617,21 @@ class _StudentStatusViewBusCarWidgetState
                                                         .fontStyle,
                                               ),
                                         ),
-                                      ].divide(SizedBox(height: 4.0)),
+                                      ].divide(SizedBox(height: 4)),
                                     ),
                                   ),
-                                ].divide(SizedBox(width: 12.0)),
+                                ].divide(SizedBox(width: 12)),
                               ),
                             ),
                           ),
-                        ].divide(SizedBox(height: 12.0)),
+                        ].divide(SizedBox(height: 12)),
                       ),
-                    ].divide(SizedBox(height: 8.0)),
+                    ].divide(SizedBox(height: 8)),
                   ),
                 ]
-                    .divide(SizedBox(height: 16.0))
-                    .addToStart(SizedBox(height: 16.0))
-                    .addToEnd(SizedBox(height: 24.0)),
+                    .divide(SizedBox(height: 16))
+                    .addToStart(SizedBox(height: 16))
+                    .addToEnd(SizedBox(height: 24)),
               ),
             ),
           ),

@@ -1,4 +1,6 @@
-# Miscellaneous
+# Secrets — never commit real credentials
+.env.json
+*.env.json
 *.class
 *.log
 *.pyc

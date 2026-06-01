@@ -89,7 +89,7 @@ class RoleBottomNav extends StatelessWidget {
               label: 'Requests',
               icon: Icons.event_note_outlined,
               activeIcon: Icons.event_note_rounded,
-              route: 'RequestStatus'),
+              route: 'ParentRequestsList'),
           _NavItem(
               id: 'profile',
               label: 'Profile',
@@ -105,12 +105,7 @@ class RoleBottomNav extends StatelessWidget {
               icon: Icons.home_outlined,
               activeIcon: Icons.home_rounded,
               route: 'DashGuardian'),
-          _NavItem(
-              id: 'children',
-              label: 'Children',
-              icon: Icons.child_care_outlined,
-              activeIcon: Icons.child_care_rounded,
-              route: 'ViewChildernG'),
+
           _NavItem(
               id: 'profile',
               label: 'Profile',

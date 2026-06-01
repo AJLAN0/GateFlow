@@ -7,8 +7,10 @@ import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../shared/role_bottom_nav.dart';
+import '../../backend/supabase/supabase_config.dart';
+import '../../data/mock_state.dart';
 import '../../shared/sign_out_tile.dart';
+import '../../shared/role_bottom_nav.dart';
 import 'admin_profile_model.dart';
 export 'admin_profile_model.dart';
 
@@ -42,6 +44,8 @@ class _AdminProfileWidgetState extends State<AdminProfileWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = context.watch<MockState>().currentProfile;
+    final email   = supabase.auth.currentUser?.email ?? profile?.phone ?? '—';
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -49,8 +53,8 @@ class _AdminProfileWidgetState extends State<AdminProfileWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        bottomNavigationBar: RoleBottomNav(current: 'profile'),
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        bottomNavigationBar: const RoleBottomNav(current: 'profile'),
         appBar: AppBar(
           backgroundColor: Color(0xFF0C3451),
           automaticallyImplyLeading: false,
@@ -127,7 +131,7 @@ class _AdminProfileWidgetState extends State<AdminProfileWidget> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Ahmed Mohammed',
+                                      profile?.fullName ?? '—',
                                       style: FlutterFlowTheme.of(context)
                                           .titleLarge
                                           .override(
@@ -222,7 +226,7 @@ class _AdminProfileWidgetState extends State<AdminProfileWidget> {
                                     size: 16.0,
                                   ),
                                   Text(
-                                    'Khalid@gmail.com',
+                                    email,
                                     style: FlutterFlowTheme.of(context)
                                         .bodySmall
                                         .override(

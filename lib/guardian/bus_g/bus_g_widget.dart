@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../data/mock_state.dart';
 import 'bus_g_model.dart';
 export 'bus_g_model.dart';
 
@@ -39,6 +40,9 @@ class _BusGWidgetState extends State<BusGWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final mock    = context.watch<MockState>();
+    final children = mock.guardianLinkedDemoChildren();
+    final firstChildName = children.isNotEmpty ? children.first.name : '—';
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -133,7 +137,7 @@ class _BusGWidgetState extends State<BusGWidget> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Saad Khaled',
+                                          firstChildName,
                                           style: FlutterFlowTheme.of(context)
                                               .headlineMedium
                                               .override(

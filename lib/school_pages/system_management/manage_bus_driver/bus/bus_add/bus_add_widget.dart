@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../../../data/mock_state.dart';
 import 'bus_add_model.dart';
 export 'bus_add_model.dart';
 
@@ -51,6 +52,49 @@ class _BusAddWidgetState extends State<BusAddWidget> {
     _model.dispose();
 
     super.dispose();
+  }
+
+  bool _saving = false;
+
+  Future<void> _saveBus() async {
+    if (_saving) return;
+    final mock = context.read<MockState>();
+    final name = _model.textController1.text.trim();
+    final zone = _model.textController2.text.trim();
+    final makeModel = _model.textController4.text.trim();
+    final plate = _model.textController5.text.trim();
+
+    if (name.isEmpty) {
+      _showSnack('Please enter a bus number.');
+      return;
+    }
+
+    // route_label carries the human-readable zone (+ make/model when present).
+    final routeLabel = [zone, makeModel]
+        .where((e) => e.isNotEmpty)
+        .join(' · ');
+
+    setState(() => _saving = true);
+    try {
+      await mock.addBus(
+        name:        name,
+        routeLabel:  routeLabel.isEmpty ? null : routeLabel,
+        plateNumber: plate.isEmpty ? null : plate,
+      );
+      if (!mounted) return;
+      _showSnack('Bus added');
+      context.safePop();
+    } catch (e) {
+      if (mounted) _showSnack('Could not add bus: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -963,10 +1007,8 @@ class _BusAddWidgetState extends State<BusAddWidget> {
                       padding:
                           EdgeInsetsDirectional.fromSTEB(6.0, 8.0, 6.0, 0.0),
                       child: FFButtonWidget(
-                        onPressed: () {
-                          print('Button pressed ...');
-                        },
-                        text: 'Add Bus',
+                        onPressed: _saving ? null : () => _saveBus(),
+                        text: _saving ? 'Adding...' : 'Add Bus',
                         options: FFButtonOptions(
                           width: double.infinity,
                           height: 56.0,

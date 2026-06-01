@@ -10,6 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../data/mock_state.dart';
 import 'request_pic_dro_model.dart';
 export 'request_pic_dro_model.dart';
 
@@ -43,6 +46,21 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  bool _earlyPickup = true;
+  bool _parentSelfPickup = true;
+  TimeOfDay _requestTime = const TimeOfDay(hour: 15, minute: 30);
+
+  static const List<String> _guardianChoices = [
+    'Mohammed Ali · Uncle',
+    'Deem Khaled · Aunt',
+  ];
+
+  String _formatTime(BuildContext context, TimeOfDay t) =>
+      MaterialLocalizations.of(context).formatTimeOfDay(
+        t,
+        alwaysUse24HourFormat: false,
+      );
+
   @override
   void initState() {
     super.initState();
@@ -59,8 +77,19 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
     super.dispose();
   }
 
+  DemoParentChild _pickedChild(BuildContext context) {
+    final cid = GoRouterState.of(context).uri.queryParameters['cid'];
+    final m = context.read<MockState>();
+    if (cid != null) {
+      final c = m.demoChild(cid);
+      if (c != null) return c;
+    }
+    return m.parentDemoChildren.first;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final picked = _pickedChild(context);
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -201,7 +230,7 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Sara Khaled',
+                                          picked.name,
                                           style: FlutterFlowTheme.of(context)
                                               .titleMedium
                                               .override(
@@ -254,7 +283,7 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                                   4.0,
                                                                   0.0),
                                                       child: Text(
-                                                        'Grade 5 ',
+                                                        '${picked.grade} ',
                                                         style: FlutterFlowTheme
                                                                 .of(context)
                                                             .labelSmall
@@ -345,80 +374,111 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                             .fontStyle,
                                       ),
                                 ),
-                                Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF0EFFD),
-                                    borderRadius: BorderRadius.circular(14.0),
-                                    border: Border.all(
-                                      color: Color(0xFF0C3451),
-                                      width: 2.0,
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _earlyPickup = true),
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: _earlyPickup
+                                          ? const Color(0xFFF0EFFD)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(
+                                        color: _earlyPickup
+                                            ? const Color(0xFF0C3451)
+                                            : const Color(0xFFE8EAF0),
+                                        width: 2.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(14.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 22.0,
-                                          height: 22.0,
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFF0C3451),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Icon(
-                                              Icons.check_rounded,
-                                              color: Colors.white,
-                                              size: 12.0,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(14.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Container(
+                                            width: 22.0,
+                                            height: 22.0,
+                                            decoration: BoxDecoration(
+                                              color: _earlyPickup
+                                                  ? const Color(0xFF0C3451)
+                                                  : const Color(0xFFE8EAF0),
+                                              shape: BoxShape.circle,
                                             ),
+                                            child: _earlyPickup
+                                                ? Align(
+                                                    alignment:
+                                                        AlignmentDirectional(
+                                                            0.0, 0.0),
+                                                    child: Icon(
+                                                      Icons.check_rounded,
+                                                      color: Colors.white,
+                                                      size: 12.0,
+                                                    ),
+                                                  )
+                                                : null,
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Early Pickup',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .interTight(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontStyle,
-                                                          ),
-                                                          color:
-                                                              Color(0xFF0C3451),
-                                                          fontSize: 14.0,
-                                                          letterSpacing: 0.0,
+                                          Expanded(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.max,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Early Pickup',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .titleSmall
+                                                      .override(
+                                                        font: GoogleFonts
+                                                            .interTight(
                                                           fontWeight:
-                                                              FontWeight.bold,
+                                                              _earlyPickup
+                                                                  ? FontWeight
+                                                                      .bold
+                                                                  : FontWeight
+                                                                      .w600,
                                                           fontStyle:
                                                               FlutterFlowTheme.of(
                                                                       context)
                                                                   .titleSmall
                                                                   .fontStyle,
                                                         ),
-                                              ),
-                                              Text(
-                                                'Pick up your child before dismissal',
-                                                style: FlutterFlowTheme.of(
-                                                        context)
-                                                    .bodySmall
-                                                    .override(
-                                                      font: GoogleFonts.inter(
+                                                        color: _earlyPickup
+                                                            ? Color(0xFF0C3451)
+                                                            : Color(0xFF6B7280),
+                                                        fontSize: 14.0,
+                                                        letterSpacing: 0.0,
+                                                        fontWeight: _earlyPickup
+                                                            ? FontWeight.bold
+                                                            : FontWeight.w600,
+                                                        fontStyle:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .titleSmall
+                                                                .fontStyle,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  'Pick up your child before dismissal',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .bodySmall
+                                                      .override(
+                                                        font: GoogleFonts.inter(
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          fontStyle:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .bodySmall
+                                                                  .fontStyle,
+                                                        ),
+                                                        color: _earlyPickup
+                                                            ? Color(0xFF6B7280)
+                                                            : Color(0xFF9CA3AF),
+                                                        fontSize: 12.0,
+                                                        letterSpacing: 0.0,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                         fontStyle:
@@ -427,95 +487,130 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                                 .bodySmall
                                                                 .fontStyle,
                                                       ),
-                                                      color: Color(0xFF6B7280),
-                                                      fontSize: 12.0,
-                                                      letterSpacing: 0.0,
-                                                      fontWeight:
-                                                          FontWeight.normal,
-                                                      fontStyle:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .bodySmall
-                                                              .fontStyle,
-                                                    ),
-                                              ),
-                                            ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Icon(
-                                          Icons.directions_walk_rounded,
-                                          color: Color(0xFF0C3451),
-                                          size: 22.0,
-                                        ),
-                                      ].divide(SizedBox(width: 12.0)),
+                                          Icon(
+                                            Icons.directions_walk_rounded,
+                                            color: _earlyPickup
+                                                ? const Color(0xFF0C3451)
+                                                : const Color(0xFFCBD0D8),
+                                            size: 22.0,
+                                          ),
+                                        ].divide(SizedBox(width: 12.0)),
+                                      ),
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14.0),
-                                    border: Border.all(
-                                      color: Color(0xFFE8EAF0),
-                                      width: 2.0,
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _earlyPickup = false),
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: !_earlyPickup
+                                          ? const Color(0xFFF0EFFD)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(
+                                        color: !_earlyPickup
+                                            ? const Color(0xFF0C3451)
+                                            : const Color(0xFFE8EAF0),
+                                        width: 2.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(14.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 22.0,
-                                          height: 22.0,
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFFE8EAF0),
-                                            shape: BoxShape.circle,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(14.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Container(
+                                            width: 22.0,
+                                            height: 22.0,
+                                            decoration: BoxDecoration(
+                                              color: !_earlyPickup
+                                                  ? const Color(0xFF0C3451)
+                                                  : const Color(0xFFE8EAF0),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: !_earlyPickup
+                                                ? const Align(
+                                                    alignment:
+                                                        AlignmentDirectional(
+                                                            0.0, 0.0),
+                                                    child: Icon(
+                                                      Icons.check_rounded,
+                                                      color: Colors.white,
+                                                      size: 12.0,
+                                                    ),
+                                                  )
+                                                : null,
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Late Dropoff',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .interTight(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontStyle,
-                                                          ),
-                                                          color:
-                                                              Color(0xFF6B7280),
-                                                          fontSize: 14.0,
-                                                          letterSpacing: 0.0,
+                                          Expanded(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.max,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Late Dropoff',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .titleSmall
+                                                      .override(
+                                                        font: GoogleFonts
+                                                            .interTight(
                                                           fontWeight:
-                                                              FontWeight.w600,
+                                                              !_earlyPickup
+                                                                  ? FontWeight
+                                                                      .bold
+                                                                  : FontWeight
+                                                                      .w600,
                                                           fontStyle:
                                                               FlutterFlowTheme.of(
                                                                       context)
                                                                   .titleSmall
                                                                   .fontStyle,
                                                         ),
-                                              ),
-                                              Text(
-                                                'Drop off your child after school starts',
-                                                style: FlutterFlowTheme.of(
-                                                        context)
-                                                    .bodySmall
-                                                    .override(
-                                                      font: GoogleFonts.inter(
+                                                        color: !_earlyPickup
+                                                            ? Color(0xFF0C3451)
+                                                            : Color(0xFF6B7280),
+                                                        fontSize: 14.0,
+                                                        letterSpacing: 0.0,
+                                                        fontWeight:
+                                                            !_earlyPickup
+                                                                ? FontWeight
+                                                                    .bold
+                                                                : FontWeight
+                                                                    .w600,
+                                                        fontStyle:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .titleSmall
+                                                                .fontStyle,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  'Drop off your child after school starts',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .bodySmall
+                                                      .override(
+                                                        font: GoogleFonts.inter(
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          fontStyle:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .bodySmall
+                                                                  .fontStyle,
+                                                        ),
+                                                        color: !_earlyPickup
+                                                            ? Color(0xFF6B7280)
+                                                            : Color(0xFF9CA3AF),
+                                                        fontSize: 12.0,
+                                                        letterSpacing: 0.0,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                         fontStyle:
@@ -524,27 +619,19 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                                 .bodySmall
                                                                 .fontStyle,
                                                       ),
-                                                      color: Color(0xFF9CA3AF),
-                                                      fontSize: 12.0,
-                                                      letterSpacing: 0.0,
-                                                      fontWeight:
-                                                          FontWeight.normal,
-                                                      fontStyle:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .bodySmall
-                                                              .fontStyle,
-                                                    ),
-                                              ),
-                                            ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Icon(
-                                          Icons.schedule_rounded,
-                                          color: Color(0xFFCBD0D8),
-                                          size: 22.0,
-                                        ),
-                                      ].divide(SizedBox(width: 12.0)),
+                                          Icon(
+                                            Icons.schedule_rounded,
+                                            color: !_earlyPickup
+                                                ? const Color(0xFF0C3451)
+                                                : const Color(0xFFCBD0D8),
+                                            size: 22.0,
+                                          ),
+                                        ].divide(SizedBox(width: 12.0)),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -586,7 +673,9 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                       size: 18.0,
                                     ),
                                     Text(
-                                      'Select Pickup Time',
+                                      _earlyPickup
+                                          ? 'Pickup time'
+                                          : 'Drop-off time',
                                       style: FlutterFlowTheme.of(context)
                                           .titleSmall
                                           .override(
@@ -609,56 +698,76 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                     ),
                                   ].divide(SizedBox(width: 6.0)),
                                 ),
-                                FlutterFlowDropDown<String>(
-                                  controller:
-                                      _model.dropDownValueController1 ??=
-                                          FormFieldController<String>(null),
-                                  options: [
-                                    '1:00 PM',
-                                    '1:30 PM',
-                                    '2:00 PM',
-                                    '2:30 PM',
-                                    '3:00 PM',
-                                    '3:30 PM'
-                                  ],
-                                  onChanged: (val) => safeSetState(
-                                      () => _model.dropDownValue1 = val),
-                                  width: double.infinity,
-                                  height: 52.0,
-                                  textStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w600,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    onTap: () async {
+                                      final t = await showTimePicker(
+                                        context: context,
+                                        initialTime: _requestTime,
+                                      );
+                                      if (t != null) {
+                                        setState(() => _requestTime = t);
+                                      }
+                                    },
+                                    child: Ink(
+                                      width: double.infinity,
+                                      height: 52.0,
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFF5F6FA),
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        border: Border.all(
+                                          color: Color(0xFFE8EAF0),
+                                          width: 2.0,
                                         ),
-                                        color: Color(0xFF1A1A2E),
-                                        fontSize: 15.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
                                       ),
-                                  hintText: '  Select a time',
-                                  icon: Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    color: Color(0xFF4F46E5),
-                                    size: 22.0,
+                                      child: Padding(
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            14.0, 0.0, 10.0, 0.0),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                _formatTime(
+                                                    context, _requestTime),
+                                                style: FlutterFlowTheme.of(
+                                                        context)
+                                                    .bodyMedium
+                                                    .override(
+                                                      font: GoogleFonts.inter(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontStyle:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .bodyMedium
+                                                                .fontStyle,
+                                                      ),
+                                                      color: Color(0xFF1A1A2E),
+                                                      fontSize: 15.0,
+                                                      letterSpacing: 0.0,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontStyle:
+                                                          FlutterFlowTheme.of(
+                                                                  context)
+                                                              .bodyMedium
+                                                              .fontStyle,
+                                                    ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.schedule_rounded,
+                                              color: Color(0xFF4F46E5),
+                                              size: 22.0,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  fillColor: Color(0xFFF5F6FA),
-                                  elevation: 0.0,
-                                  borderColor: Color(0xFFE8EAF0),
-                                  borderWidth: 2.0,
-                                  borderRadius: 12.0,
-                                  margin: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 0.0),
-                                  hidesUnderline: true,
-                                  isSearchable: false,
-                                  isMultiSelect: false,
                                 ),
                                 Row(
                                   mainAxisSize: MainAxisSize.max,
@@ -670,7 +779,9 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                     ),
                                     Expanded(
                                       child: Text(
-                                        'Please select at least 30 minutes before the scheduled time.',
+                                        _earlyPickup
+                                            ? 'Please request at least 30 minutes before the usual dismissal time when possible.'
+                                            : 'Please choose when your child will arrive after school has started.',
                                         style: FlutterFlowTheme.of(context)
                                             .bodySmall
                                             .override(
@@ -755,80 +866,252 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                     ),
                                   ].divide(SizedBox(width: 6.0)),
                                 ),
-                                Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF0EFFD),
-                                    borderRadius: BorderRadius.circular(14.0),
-                                    border: Border.all(
-                                      color: Color(0xFF0C3451),
-                                      width: 2.0,
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _parentSelfPickup = true),
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: _parentSelfPickup
+                                          ? Color(0xFFF0EFFD)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(
+                                        color: _parentSelfPickup
+                                            ? Color(0xFF0C3451)
+                                            : Color(0xFFE8EAF0),
+                                        width: 2.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(14.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 22.0,
-                                          height: 22.0,
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFF0C3451),
-                                            shape: BoxShape.circle,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(14.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Container(
+                                            width: 22.0,
+                                            height: 22.0,
+                                            decoration: BoxDecoration(
+                                              color: _parentSelfPickup
+                                                  ? Color(0xFF0C3451)
+                                                  : Color(0xFFE8EAF0),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: _parentSelfPickup
+                                                ? Align(
+                                                    alignment:
+                                                        AlignmentDirectional(
+                                                            0.0, 0.0),
+                                                    child: Icon(
+                                                      Icons.check_rounded,
+                                                      color: Colors.white,
+                                                      size: 12.0,
+                                                    ),
+                                                  )
+                                                : null,
                                           ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Icon(
-                                              Icons.check_rounded,
-                                              color: Colors.white,
-                                              size: 12.0,
+                                          Expanded(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.max,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'I will pick up my child',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .titleSmall
+                                                      .override(
+                                                        font: GoogleFonts
+                                                            .interTight(
+                                                          fontWeight:
+                                                              _parentSelfPickup
+                                                                  ? FontWeight
+                                                                      .bold
+                                                                  : FontWeight
+                                                                      .w600,
+                                                          fontStyle:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .titleSmall
+                                                                  .fontStyle,
+                                                        ),
+                                                        color: _parentSelfPickup
+                                                            ? Color(0xFF0C3451)
+                                                            : Color(0xFF6B7280),
+                                                        fontSize: 14.0,
+                                                        letterSpacing: 0.0,
+                                                        fontWeight:
+                                                            _parentSelfPickup
+                                                                ? FontWeight
+                                                                    .bold
+                                                                : FontWeight
+                                                                    .w600,
+                                                        fontStyle:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .titleSmall
+                                                                .fontStyle,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  'You are listed as a primary guardian',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .bodySmall
+                                                      .override(
+                                                        font: GoogleFonts.inter(
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          fontStyle:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .bodySmall
+                                                                  .fontStyle,
+                                                        ),
+                                                        color: _parentSelfPickup
+                                                            ? Color(0xFF6B7280)
+                                                            : Color(0xFF9CA3AF),
+                                                        fontSize: 12.0,
+                                                        letterSpacing: 0.0,
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                        fontStyle:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .bodySmall
+                                                                .fontStyle,
+                                                      ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'I will pick up my child',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .interTight(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontStyle,
-                                                          ),
-                                                          color:
-                                                              Color(0xFF0C3451),
-                                                          fontSize: 14.0,
-                                                          letterSpacing: 0.0,
+                                          Icon(
+                                            Icons.how_to_reg_rounded,
+                                            color: _parentSelfPickup
+                                                ? Color(0xFF0C3451)
+                                                : Color(0xFFCBD0D8),
+                                            size: 20.0,
+                                          ),
+                                        ].divide(SizedBox(width: 12.0)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _parentSelfPickup = false),
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: !_parentSelfPickup
+                                          ? Color(0xFFF0EFFD)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(
+                                        color: !_parentSelfPickup
+                                            ? Color(0xFF0C3451)
+                                            : Color(0xFFE8EAF0),
+                                        width: 2.0,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.all(14.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Container(
+                                            width: 22.0,
+                                            height: 22.0,
+                                            decoration: BoxDecoration(
+                                              color: !_parentSelfPickup
+                                                  ? Color(0xFF0C3451)
+                                                  : Color(0xFFE8EAF0),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: !_parentSelfPickup
+                                                ? const Align(
+                                                    alignment:
+                                                        AlignmentDirectional(
+                                                            0.0, 0.0),
+                                                    child: Icon(
+                                                      Icons.check_rounded,
+                                                      color: Colors.white,
+                                                      size: 12.0,
+                                                    ),
+                                                  )
+                                                : null,
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.max,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Authorized person will pick up',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .titleSmall
+                                                      .override(
+                                                        font: GoogleFonts
+                                                            .interTight(
                                                           fontWeight:
-                                                              FontWeight.bold,
+                                                              !_parentSelfPickup
+                                                                  ? FontWeight
+                                                                      .bold
+                                                                  : FontWeight
+                                                                      .w600,
                                                           fontStyle:
                                                               FlutterFlowTheme.of(
                                                                       context)
                                                                   .titleSmall
                                                                   .fontStyle,
                                                         ),
-                                              ),
-                                              Text(
-                                                'You are listed as a primary guardian',
-                                                style: FlutterFlowTheme.of(
-                                                        context)
-                                                    .bodySmall
-                                                    .override(
-                                                      font: GoogleFonts.inter(
+                                                        color:
+                                                            !_parentSelfPickup
+                                                                ? Color(
+                                                                    0xFF0C3451)
+                                                                : Color(
+                                                                    0xFF6B7280),
+                                                        fontSize: 14.0,
+                                                        letterSpacing: 0.0,
+                                                        fontWeight:
+                                                            !_parentSelfPickup
+                                                                ? FontWeight
+                                                                    .bold
+                                                                : FontWeight
+                                                                    .w600,
+                                                        fontStyle:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .titleSmall
+                                                                .fontStyle,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  'Select from your authorized guardians',
+                                                  style: FlutterFlowTheme.of(
+                                                          context)
+                                                      .bodySmall
+                                                      .override(
+                                                        font: GoogleFonts.inter(
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          fontStyle:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .bodySmall
+                                                                  .fontStyle,
+                                                        ),
+                                                        color:
+                                                            !_parentSelfPickup
+                                                                ? Color(
+                                                                    0xFF6B7280)
+                                                                : Color(
+                                                                    0xFF9CA3AF),
+                                                        fontSize: 12.0,
+                                                        letterSpacing: 0.0,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                         fontStyle:
@@ -837,155 +1120,63 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                                 .bodySmall
                                                                 .fontStyle,
                                                       ),
-                                                      color: Color(0xFF6B7280),
-                                                      fontSize: 12.0,
-                                                      letterSpacing: 0.0,
-                                                      fontWeight:
-                                                          FontWeight.normal,
-                                                      fontStyle:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .bodySmall
-                                                              .fontStyle,
-                                                    ),
-                                              ),
-                                            ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Icon(
-                                          Icons.how_to_reg_rounded,
-                                          color: Color(0xFF0C3451),
-                                          size: 20.0,
-                                        ),
-                                      ].divide(SizedBox(width: 12.0)),
+                                          Icon(
+                                            Icons.people_alt_rounded,
+                                            color: !_parentSelfPickup
+                                                ? Color(0xFF0C3451)
+                                                : Color(0xFFCBD0D8),
+                                            size: 20.0,
+                                          ),
+                                        ].divide(SizedBox(width: 12.0)),
+                                      ),
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14.0),
-                                    border: Border.all(
-                                      color: Color(0xFFE8EAF0),
-                                      width: 2.0,
+                                if (!_parentSelfPickup)
+                                  Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFFF5F6FA),
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(
+                                        color: Color(0xFFE8EAF0),
+                                        width: 2.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(14.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 22.0,
-                                          height: 22.0,
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFFE8EAF0),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Authorized person will pick up',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .interTight(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontStyle,
-                                                          ),
-                                                          color:
-                                                              Color(0xFF6B7280),
-                                                          fontSize: 14.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .titleSmall
-                                                                  .fontStyle,
-                                                        ),
-                                              ),
-                                              Text(
-                                                'Select from your authorized guardians',
-                                                style: FlutterFlowTheme.of(
-                                                        context)
-                                                    .bodySmall
-                                                    .override(
-                                                      font: GoogleFonts.inter(
-                                                        fontWeight:
-                                                            FontWeight.normal,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodySmall
-                                                                .fontStyle,
-                                                      ),
-                                                      color: Color(0xFF9CA3AF),
-                                                      fontSize: 12.0,
-                                                      letterSpacing: 0.0,
+                                    child: Padding(
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          12.0, 10.0, 12.0, 10.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.max,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding:
+                                                EdgeInsetsDirectional.fromSTEB(
+                                                    0.0, 0.0, 0.0, 6.0),
+                                            child: Text(
+                                              'Select Authorized Guardian',
+                                              style: FlutterFlowTheme.of(
+                                                      context)
+                                                  .labelSmall
+                                                  .override(
+                                                    font: GoogleFonts.inter(
                                                       fontWeight:
-                                                          FontWeight.normal,
+                                                          FontWeight.w600,
                                                       fontStyle:
                                                           FlutterFlowTheme.of(
                                                                   context)
-                                                              .bodySmall
+                                                              .labelSmall
                                                               .fontStyle,
                                                     ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.people_alt_rounded,
-                                          color: Color(0xFFCBD0D8),
-                                          size: 20.0,
-                                        ),
-                                      ].divide(SizedBox(width: 12.0)),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF5F6FA),
-                                    borderRadius: BorderRadius.circular(14.0),
-                                    border: Border.all(
-                                      color: Color(0xFFE8EAF0),
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        12.0, 10.0, 12.0, 10.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.max,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding:
-                                              EdgeInsetsDirectional.fromSTEB(
-                                                  0.0, 0.0, 0.0, 6.0),
-                                          child: Text(
-                                            'Select Authorized Guardian',
-                                            style: FlutterFlowTheme.of(context)
-                                                .labelSmall
-                                                .override(
-                                                  font: GoogleFonts.inter(
+                                                    color: Color(0xFF9CA3AF),
+                                                    fontSize: 11.0,
+                                                    letterSpacing: 0.0,
                                                     fontWeight: FontWeight.w600,
                                                     fontStyle:
                                                         FlutterFlowTheme.of(
@@ -993,32 +1184,34 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                             .labelSmall
                                                             .fontStyle,
                                                   ),
-                                                  color: Color(0xFF9CA3AF),
-                                                  fontSize: 11.0,
-                                                  letterSpacing: 0.0,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .labelSmall
-                                                          .fontStyle,
-                                                ),
+                                            ),
                                           ),
-                                        ),
-                                        FlutterFlowDropDown<String>(
-                                          controller: _model
-                                                  .dropDownValueController2 ??=
-                                              FormFieldController<String>(null),
-                                          options: <String>[],
-                                          onChanged: (val) => safeSetState(() =>
-                                              _model.dropDownValue2 = val),
-                                          width: double.infinity,
-                                          height: 44.0,
-                                          textStyle: FlutterFlowTheme.of(
-                                                  context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
+                                          FlutterFlowDropDown<String>(
+                                            controller: _model
+                                                    .dropDownValueController2 ??=
+                                                FormFieldController<String>(
+                                                    null),
+                                            options: _guardianChoices,
+                                            onChanged: (val) => safeSetState(
+                                                () => _model.dropDownValue2 =
+                                                    val),
+                                            width: double.infinity,
+                                            height: 44.0,
+                                            textStyle: FlutterFlowTheme.of(
+                                                    context)
+                                                .bodyMedium
+                                                .override(
+                                                  font: GoogleFonts.inter(
+                                                    fontWeight: FontWeight.w500,
+                                                    fontStyle:
+                                                        FlutterFlowTheme.of(
+                                                                context)
+                                                            .bodyMedium
+                                                            .fontStyle,
+                                                  ),
+                                                  color: Color(0xFF1A2340),
+                                                  fontSize: 14.0,
+                                                  letterSpacing: 0.0,
                                                   fontWeight: FontWeight.w500,
                                                   fontStyle:
                                                       FlutterFlowTheme.of(
@@ -1026,37 +1219,28 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                                                           .bodyMedium
                                                           .fontStyle,
                                                 ),
-                                                color: Color(0xFFCBD0D8),
-                                                fontSize: 14.0,
-                                                letterSpacing: 0.0,
-                                                fontWeight: FontWeight.w500,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                          hintText: '  Select a guardian',
-                                          icon: Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            color: Color(0xFFCBD0D8),
-                                            size: 20.0,
+                                            hintText: '  Select a guardian',
+                                            icon: Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: Color(0xFF4F46E5),
+                                              size: 20.0,
+                                            ),
+                                            fillColor: Colors.white,
+                                            elevation: 0.0,
+                                            borderColor: Color(0xFFE8EAF0),
+                                            borderWidth: 1.0,
+                                            borderRadius: 10.0,
+                                            margin:
+                                                EdgeInsetsDirectional.fromSTEB(
+                                                    0.0, 0.0, 0.0, 0.0),
+                                            hidesUnderline: true,
+                                            isSearchable: false,
+                                            isMultiSelect: false,
                                           ),
-                                          fillColor: Colors.white,
-                                          elevation: 0.0,
-                                          borderColor: Color(0xFFE8EAF0),
-                                          borderWidth: 1.0,
-                                          borderRadius: 10.0,
-                                          margin:
-                                              EdgeInsetsDirectional.fromSTEB(
-                                                  0.0, 0.0, 0.0, 0.0),
-                                          hidesUnderline: true,
-                                          isSearchable: false,
-                                          isMultiSelect: false,
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
                               ].divide(SizedBox(height: 12.0)),
                             ),
                           ),
@@ -1241,9 +1425,32 @@ class _RequestPicDroWidgetState extends State<RequestPicDroWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(6.0, 0.0, 6.0, 0.0),
                         child: FFButtonWidget(
-                          onPressed: () async {
-                            context
-                                .pushNamed(RequestSuccessfulWidget.routeName);
+                          onPressed: () {
+                            final m = context.read<MockState>();
+                            final cid = GoRouterState.of(context)
+                                    .uri
+                                    .queryParameters['cid'] ??
+                                picked.id;
+                            final reason =
+                                _model.textController?.text.trim() ?? '';
+                            final who = _parentSelfPickup
+                                ? 'Parent (self pickup)'
+                                : (_model.dropDownValue2 ??
+                                    (_guardianChoices.isNotEmpty
+                                        ? _guardianChoices.first
+                                        : 'Authorized guardian'));
+                            final pickupPersonSummary =
+                                reason.isNotEmpty ? '$who — $reason' : who;
+                            final req = m.submitNewParentRequest(
+                              studentId: cid,
+                              type: _earlyPickup
+                                  ? 'Early Pickup'
+                                  : 'Late Dropoff',
+                              timeLabel: _formatTime(context, _requestTime),
+                              pickupPersonSummary: pickupPersonSummary,
+                            );
+                            context.pushNamed(RequestSuccessfulWidget.routeName,
+                                queryParameters: {'rid': req.id});
                           },
                           text: 'Submit Request',
                           options: FFButtonOptions(

@@ -33,6 +33,10 @@ class DriverAddModel extends FlutterFlowModel<DriverAddWidget> {
   // State field(s) for DropDown widget.
   String? dropDownValue2;
   FormFieldController<String>? dropDownValueController2;
+  // State field(s) for Email TextField widget.
+  FocusNode? textFieldFocusNode4;
+  TextEditingController? textController4;
+  String? Function(BuildContext, String?)? textController4Validator;
 
   @override
   void initState(BuildContext context) {}
@@ -47,5 +51,8 @@ class DriverAddModel extends FlutterFlowModel<DriverAddWidget> {
 
     textFieldFocusNode3?.dispose();
     textController3?.dispose();
+
+    textFieldFocusNode4?.dispose();
+    textController4?.dispose();
   }
 }

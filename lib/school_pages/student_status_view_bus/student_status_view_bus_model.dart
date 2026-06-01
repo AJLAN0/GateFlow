@@ -10,9 +10,15 @@ import 'package:provider/provider.dart';
 
 class StudentStatusViewBusModel
     extends FlutterFlowModel<StudentStatusViewBusWidget> {
+  TextEditingController? textController;
+  FocusNode? textFieldFocusNode;
+
   @override
   void initState(BuildContext context) {}
 
   @override
-  void dispose() {}
+  void dispose() {
+    textController?.dispose();
+    textFieldFocusNode?.dispose();
+  }
 }

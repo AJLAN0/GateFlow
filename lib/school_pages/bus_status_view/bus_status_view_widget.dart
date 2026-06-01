@@ -1,14 +1,20 @@
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
+import '/flutter_flow/flutter_flow_icon_button.dart';
+import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/flutter_flow_util.dart';
+import '../../data/mock_state.dart';
+import '../../shared/driver_route.dart';
+import '../../shared/gateflow_colors.dart';
+import '../../shared/gateflow_mock_map.dart';
+import '../../shared/status_pill.dart';
 import 'bus_status_view_model.dart';
+
 export 'bus_status_view_model.dart';
 
+/// School-side operational snapshot for a selected bus (live route + riders).
 class BusStatusViewWidget extends StatefulWidget {
   const BusStatusViewWidget({super.key});
 
@@ -24,6 +30,17 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  String _busStatusPhrase(BusStatus s) {
+    switch (s) {
+      case BusStatus.stationary:
+        return 'Stationary · Idle at depot';
+      case BusStatus.onRouteToSchool:
+        return 'Driving to campus';
+      case BusStatus.onRouteToHome:
+        return 'Driving home dismissal';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -37,8 +54,45 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
     super.dispose();
   }
 
+  Bus? _resolveBus(MockState mock) {
+    final bid = GoRouterState.of(context).uri.queryParameters['bid'];
+    if (bid != null && bid.isNotEmpty) {
+      for (final b in mock.buses) {
+        if (b.id == bid) return b;
+      }
+    }
+    return mock.buses.isNotEmpty ? mock.buses.first : null;
+  }
+
+  List<Student> _ridersOnBus(MockState mock, Bus bus) =>
+      mock.students.where((s) => s.busId == bus.id).toList();
+
+  StatusTone _statusTone(BusStatus status) {
+    switch (status) {
+      case BusStatus.onRouteToSchool:
+      case BusStatus.onRouteToHome:
+        return StatusTone.pending;
+      case BusStatus.stationary:
+        return StatusTone.neutral;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mock = context.watch<MockState>();
+    final bus = _resolveBus(mock);
+    final assigned = bus == null ? <Student>[] : _ridersOnBus(mock, bus);
+    final routeProgress = computeDriverRouteProgress(
+      bus: bus,
+      riders: assigned,
+    );
+    final onBus = assigned
+        .where((s) =>
+            s.status == StudentStatus.onBusToHome ||
+            s.status == StudentStatus.onBusToSchool)
+        .length;
+    final dropped = assigned.where((s) => s.status == StudentStatus.atHome).length;
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -48,508 +102,406 @@ class _BusStatusViewWidgetState extends State<BusStatusViewWidget> {
         key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: Color(0xFF0C3451),
+          backgroundColor: GateFlowColors.brandPrimary,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
-            borderRadius: 30.0,
-            borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 30.0,
-            ),
-            onPressed: () async {
-              context.safePop();
-            },
+            borderRadius: 30,
+            buttonSize: 56,
+            icon:
+                const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 26),
+            onPressed: () => context.safePop(),
           ),
           title: Text(
-            'View Bus Status',
-            style: FlutterFlowTheme.of(context).titleLarge.override(
-                  font: GoogleFonts.outfit(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                  fontSize: 24.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).titleLarge.fontWeight,
-                  fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                ),
+            bus == null ? 'Bus status' : bus.name,
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 20),
           ),
-          actions: [],
-          centerTitle: false,
-          elevation: 2.0,
+          elevation: 0,
         ),
         body: SafeArea(
-          top: true,
-          child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: FlutterFlowTheme.of(context).secondaryBackground,
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(
-                        color: FlutterFlowTheme.of(context).alternate,
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              Container(
-                                width: 60.0,
-                                height: 60.0,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF0C3451),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.directions_bus_sharp,
-                                  color: Colors.white,
-                                  size: 24.0,
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '[Bus_Number]',
-                                      style: FlutterFlowTheme.of(context)
-                                          .titleMedium
-                                          .override(
-                                            font: GoogleFonts.interTight(
-                                              fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .titleMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .titleMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Text(
-                                      '[Zone] ',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: FlutterFlowTheme.of(context)
-                                                .secondaryText,
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    Text(
-                                      '[Driver] ',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: FlutterFlowTheme.of(context)
-                                                .secondaryText,
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                  ].divide(SizedBox(height: 4.0)),
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 12.0)),
-                          ),
-                        ].divide(SizedBox(height: 12.0)),
-                      ),
-                    ),
+          child: bus == null
+              ? Center(
+                  child: Text(
+                    'No bus data seeded.',
+                    style: GoogleFonts.inter(color: GateFlowColors.textSecondary),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.max,
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Status',
-                        style: FlutterFlowTheme.of(context).titleSmall.override(
-                              font: GoogleFonts.interTight(
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: GateFlowColors.divider),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0F000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: GateFlowColors.brandPrimary
+                                      .withValues(alpha: .12),
+                                  child: Icon(Icons.directions_bus_rounded,
+                                      color: GateFlowColors.brandPrimary, size: 30),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        bus.name,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      Text(
+                                        bus.routeLabel,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          color: GateFlowColors.textSecondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Driver · ${mock.busDriverName(bus)}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: GateFlowColors.textTertiary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                StatusPill(
+                                  label: _busStatusPhrase(bus.status),
+                                  tone: _statusTone(bus.status),
+                                  icon: Icons.departure_board_outlined,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              bus.lastUpdateLabel ?? 'Status synced from backend',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
+                                color: GateFlowColors.textSecondary,
                               ),
-                              letterSpacing: 0.0,
-                              fontWeight: FontWeight.w600,
-                              fontStyle: FlutterFlowTheme.of(context)
-                                  .titleSmall
-                                  .fontStyle,
                             ),
+                          ],
+                        ),
                       ),
-                      Column(
-                        mainAxisSize: MainAxisSize.max,
+                      const SizedBox(height: 14),
+                      Text(
+                        'Live route',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: GateFlowColors.brandPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: GateFlowColors.divider),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0F000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  routeProgress.legSummary,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: GateFlowColors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  '${routeProgress.stops.length} stops',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: GateFlowColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            GateFlowRouteLegBar(progress: routeProgress),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Icon(Icons.people_alt_outlined,
+                                    size: 16, color: GateFlowColors.brandPrimary),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${routeProgress.completedDropoffs} of ${routeProgress.totalRiders} riders delivered · ${routeProgress.overallPercent}%',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      color: GateFlowColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Route stops',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: GateFlowColors.brandPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Same path the driver sees — student drop-off points on this bus',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: GateFlowColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: GateFlowColors.divider),
+                        ),
+                        child: GateFlowRouteStepTimeline(progress: routeProgress),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.0),
-                              border: Border.all(
-                                color: Color(0xFF0C3451),
-                                width: 2.0,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Container(
-                                    width: 48.0,
-                                    height: 48.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF0C3451),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.access_time_filled_sharp,
-                                        color:
-                                            FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.max,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Ready',
-                                          style: FlutterFlowTheme.of(context)
-                                              .titleSmall
-                                              .override(
-                                                font: GoogleFonts.interTight(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .titleSmall
-                                                          .fontStyle,
-                                                ),
-                                                letterSpacing: 0.0,
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Text(
-                                          'Bus is ready to start its route.',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(height: 4.0)),
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: Color(0xFF0C3451),
-                                    size: 24.0,
-                                  ),
-                                ].divide(SizedBox(width: 12.0)),
-                              ),
+                          Expanded(
+                            child: _MetricTile(
+                              label: 'On bus',
+                              value: onBus.toString(),
+                              icon: Icons.airline_seat_recline_normal_outlined,
                             ),
                           ),
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context)
-                                  .secondaryBackground,
-                              borderRadius: BorderRadius.circular(12.0),
-                              border: Border.all(
-                                color: FlutterFlowTheme.of(context).alternate,
-                                width: 1.0,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Container(
-                                    width: 48.0,
-                                    height: 48.0,
-                                    decoration: BoxDecoration(
-                                      color: FlutterFlowTheme.of(context)
-                                          .secondaryText,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.departure_board,
-                                        color:
-                                            FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.max,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'In Transit ',
-                                          style: FlutterFlowTheme.of(context)
-                                              .titleSmall
-                                              .override(
-                                                font: GoogleFonts.interTight(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .titleSmall
-                                                          .fontStyle,
-                                                ),
-                                                letterSpacing: 0.0,
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Text(
-                                          'Bus is actively driving.',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(height: 4.0)),
-                                    ),
-                                  ),
-                                ].divide(SizedBox(width: 12.0)),
-                              ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _MetricTile(
+                              label: 'Dropped off',
+                              value: dropped.toString(),
+                              icon: Icons.task_alt_rounded,
                             ),
                           ),
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context)
-                                  .secondaryBackground,
-                              borderRadius: BorderRadius.circular(12.0),
-                              border: Border.all(
-                                color: FlutterFlowTheme.of(context).alternate,
-                                width: 1.0,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Container(
-                                    width: 48.0,
-                                    height: 48.0,
-                                    decoration: BoxDecoration(
-                                      color: FlutterFlowTheme.of(context)
-                                          .secondaryText,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.check_circle,
-                                        color:
-                                            FlutterFlowTheme.of(context).info,
-                                        size: 24.0,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.max,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Completed',
-                                          style: FlutterFlowTheme.of(context)
-                                              .titleSmall
-                                              .override(
-                                                font: GoogleFonts.interTight(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .titleSmall
-                                                          .fontStyle,
-                                                ),
-                                                letterSpacing: 0.0,
-                                                fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Text(
-                                          'Bus has finished its route.',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(height: 4.0)),
-                                    ),
-                                  ),
-                                ].divide(SizedBox(width: 12.0)),
-                              ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _MetricTile(
+                              label: 'Assigned',
+                              value: assigned.length.toString(),
+                              icon: Icons.groups_2_outlined,
                             ),
                           ),
-                        ].divide(SizedBox(height: 12.0)),
+                        ],
                       ),
-                    ].divide(SizedBox(height: 8.0)),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Students on this bus',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: GateFlowColors.brandPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (assigned.isEmpty)
+                        Text(
+                          'No students assigned to this bus yet.',
+                          style: GoogleFonts.inter(
+                              color: GateFlowColors.textTertiary),
+                        )
+                      else
+                        ...assigned.map(
+                              (s) => Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border:
+                                      Border.all(color: GateFlowColors.divider),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            s.name,
+                                            style: GoogleFonts.inter(
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                          Text(
+                                            '${s.grade} · ${s.lastMockUpdateLabel}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              color: GateFlowColors.textSecondary,
+                                            ),
+                                          ),
+                                          if (s.dropOffLocation != null &&
+                                              s.dropOffLocation!.isNotEmpty)
+                                            Text(
+                                              s.dropOffLocation!,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 11,
+                                                color: GateFlowColors.textTertiary,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Operational alerts',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: GateFlowColors.brandPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (mock.operationalAlerts.isEmpty)
+                        Text(
+                          'No active alerts.',
+                          style: GoogleFonts.inter(
+                              color: GateFlowColors.textTertiary),
+                        ),
+                      ...mock.operationalAlerts.take(3).map(
+                            (a) => Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF8EC),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color:
+                                      GateFlowColors.warning.withValues(alpha: .4),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    a.title,
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    a.body,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      height: 1.3,
+                                      color: GateFlowColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                    ],
                   ),
-                ]
-                    .divide(SizedBox(height: 16.0))
-                    .addToStart(SizedBox(height: 16.0))
-                    .addToEnd(SizedBox(height: 24.0)),
-              ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GateFlowColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon,
+              color: GateFlowColors.brandPrimary,
+              size: 18),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w800,
+              fontSize: 20,
             ),
           ),
-        ),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: GateFlowColors.textTertiary,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,75 +1,1651 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../backend/supabase/supabase_config.dart';
+import '../backend/supabase/models/db_models.dart';
+import '../backend/supabase/services/auth_service.dart';
+import '../backend/supabase/services/student_service.dart';
+import '../backend/supabase/services/bus_service.dart';
+import '../backend/supabase/services/request_service.dart';
+import '../backend/supabase/services/guardian_service.dart';
+import '../backend/supabase/services/operational_alert_service.dart';
+import '../backend/supabase/services/driver_service.dart';
+import '../backend/supabase/services/notification_service.dart';
+import '../backend/supabase/services/seed_service.dart';
+import '../backend/supabase/services/schedule_service.dart';
+import '../backend/supabase/services/profile_service.dart';
+import '../backend/supabase/services/admin_service.dart';
+
+// =============================================================================
+// Enums (UI-layer, unchanged)
+// =============================================================================
 enum StudentStatus { atHome, onBusToSchool, atSchool, onBusToHome, pickedUpByCar }
 enum RequestStatus { pending, approved, rejected }
-enum BusStatus { stationary, onRouteToSchool, onRouteToHome }
-enum UserRole { parent, schoolStaff, busDriver, guardian, none }
+enum BusStatus     { stationary, onRouteToSchool, onRouteToHome }
+enum UserRole      { parent, schoolStaff, busDriver, guardian, none }
+enum DemoChildTransport { bus, car }
+
+// =============================================================================
+// UI-layer model classes (same interface as before)
+// =============================================================================
+
+class DemoParentChild {
+  DemoParentChild({
+    required this.id,
+    required this.name,
+    required this.grade,
+    required this.transport,
+    this.busId,
+    this.absentToday = false,
+  });
+  final String id;
+  final String name;
+  final String grade;
+  final DemoChildTransport transport;
+  final String? busId;
+  bool absentToday;
+}
+
+class SchoolTimeRequestEntry {
+  SchoolTimeRequestEntry({
+    required this.id,
+    required this.childName,
+    required this.grade,
+    required this.reason,
+    required this.timeLabel,
+    required this.requestedBy,
+    required this.isEarly,
+    required this.status,
+  });
+  final String id;
+  final String childName;
+  final String grade;
+  final String reason;
+  final String timeLabel;
+  final String requestedBy;
+  final bool isEarly;
+  RequestStatus status;
+}
+
+class GuardianDemoProfile {
+  const GuardianDemoProfile({
+    required this.fullName,
+    required this.phone,
+    required this.email,
+    required this.relationship,
+    required this.authorizationNote,
+    required this.assignedChildNames,
+    this.notificationsEnabled = true,
+  });
+  final String fullName;
+  final String phone;
+  final String email;
+  final String relationship;
+  final String authorizationNote;
+  final List<String> assignedChildNames;
+  final bool notificationsEnabled;
+}
+
+class OperationalAlert {
+  OperationalAlert({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.createdAt,
+  });
+  final String id;
+  final String title;
+  final String body;
+  final DateTime createdAt;
+}
+
+class PendingGuardianInvite {
+  PendingGuardianInvite({
+    required this.id,
+    required this.fullName,
+    required this.phone,
+    required this.relationship,
+    required this.forChildrenSummary,
+    this.status = GuardianInviteStatus.pending,
+  });
+  final String id;
+  final String fullName;
+  final String phone;
+  final String relationship;
+  final String forChildrenSummary;
+  GuardianInviteStatus status;
+}
+
+enum GuardianInviteStatus { pending, approvedBySchool }
+enum GuardianPickupIntent { none, pick, drop }
+enum GatePickupPersonKind { parent, guardian }
+
+class GatePickupPersonProfile {
+  const GatePickupPersonProfile({
+    required this.nationalId,
+    required this.phoneDigits,
+    required this.displayPhone,
+    required this.fullName,
+    required this.kind,
+    required this.linkedChildren,
+    required this.authorizationLabel,
+    required this.allowedActionLabel,
+  });
+  final String nationalId;
+  final String phoneDigits;
+  final String displayPhone;
+  final String fullName;
+  final GatePickupPersonKind kind;
+  final List<String> linkedChildren;
+  final String authorizationLabel;
+  final String allowedActionLabel;
+}
 
 class Student {
+  Student({
+    required this.id,
+    required this.name,
+    required this.grade,
+    required this.status,
+    this.busId,
+    this.dropOffLocation,
+    this.lastMockUpdateLabel = '',
+  });
   final String id;
   final String name;
   final String grade;
   StudentStatus status;
   final String? busId;
-
-  Student({required this.id, required this.name, required this.grade, required this.status, this.busId});
+  final String? dropOffLocation;
+  String lastMockUpdateLabel;
 }
 
 class Bus {
+  Bus({
+    required this.id,
+    required this.name,
+    required this.routeLabel,
+    required this.driverName,
+    required this.driverId,
+    required this.status,
+    this.lastUpdateLabel,
+  });
   final String id;
   final String name;
+  final String routeLabel;
+  final String driverName;
   final String driverId;
   BusStatus status;
-
-  Bus({required this.id, required this.name, required this.driverId, required this.status});
+  String? lastUpdateLabel;
 }
 
 class ParentRequest {
+  ParentRequest({
+    required this.id,
+    required this.studentId,
+    required this.type,
+    required this.status,
+    required this.date,
+    this.pickupPersonSummary,
+    this.timeLabel,
+  });
   final String id;
   final String studentId;
-  final String type; // 'early_dismissal' or 'absence'.
+  final String type;
   RequestStatus status;
   final DateTime date;
-
-  ParentRequest({required this.id, required this.studentId, required this.type, required this.status, required this.date});
+  final String? pickupPersonSummary;
+  final String? timeLabel;
 }
 
+enum DriverScanPhase { idle, boarded, droppedOff }
+
+class DriverScanOutcome {
+  const DriverScanOutcome({
+    required this.phaseAfter,
+    required this.studentName,
+    required this.title,
+    required this.detail,
+    required this.warning,
+    this.showStaffAlert = false,
+  });
+  final DriverScanPhase phaseAfter;
+  final String studentName;
+  final String title;
+  final String detail;
+  final bool warning;
+  final bool showStaffAlert;
+}
+
+// =============================================================================
+// MockState — Supabase-backed ChangeNotifier
+//
+// Public API is identical to the original mock so all 60 pages compile
+// without changes. Internally, data is loaded from / written to Supabase
+// when configured, and falls back to the demo dataset when Supabase is not
+// yet set up (i.e. kSupabaseUrl is still the placeholder).
+// =============================================================================
 class MockState extends ChangeNotifier {
-  UserRole currentUserRole = UserRole.none;
 
-  List<Student> students = [
-    Student(id: 's1', name: 'Khalid Jr.', grade: 'Grade 3', status: StudentStatus.atSchool, busId: 'b1'),
-    Student(id: 's2', name: 'Aisha', grade: 'Grade 1', status: StudentStatus.atHome),
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  User? supabaseUser;
+  DbProfile? currentProfile;
+  bool isLoading = false;
+  String? authError;
+
+  UserRole _role = UserRole.none;
+  UserRole get currentUserRole => _role;
+
+  // ── Realtime subscriptions ────────────────────────────────────────────────
+  StreamSubscription<AuthState>? _authSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _studentsSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _busesSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _requestsSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _alertsSub;
+
+  // ── Data ──────────────────────────────────────────────────────────────────
+  List<Student>              students            = [];
+  List<Bus>                  buses               = [];
+  List<ParentRequest>        requests            = [];
+  List<SchoolTimeRequestEntry> schoolTimeRequests = [];
+  List<OperationalAlert>     operationalAlerts   = [];
+  List<DemoParentChild>      parentDemoChildren  = [];
+
+  // ── School-admin directory lists (loaded for schoolStaff) ──────────────────
+  List<DbProfile>       schoolParents   = [];
+  List<DbProfile>       schoolDrivers   = [];
+  List<DbGuardian>      schoolGuardians = [];
+  List<DbDailySchedule> dailySchedules  = [];
+
+  /// Real bus ID for the signed-in bus driver (null for other roles / demo).
+  String? currentDriverBusId;
+
+  /// Resolved bus record for the signed-in driver.
+  Bus? get currentDriverBus {
+    final id = currentDriverBusId;
+    if (id != null) {
+      try {
+        return buses.firstWhere((b) => b.id == id);
+      } catch (_) {}
+    }
+    if (_role == UserRole.busDriver && buses.isNotEmpty) {
+      return buses.first;
+    }
+    return null;
+  }
+
+  /// Students assigned to the driver's bus only.
+  List<Student> get studentsOnDriverBus {
+    final busId = currentDriverBusId ?? currentDriverBus?.id;
+    if (busId == null || busId.isEmpty) return [];
+    return students.where((s) => s.busId == busId).toList();
+  }
+
+  void resolveDriverBusContext() {
+    if (_role != UserRole.busDriver) return;
+    if (currentDriverBusId != null) return;
+    final profileId = currentProfile?.id;
+    if (profileId != null) {
+      for (final b in buses) {
+        if (b.driverId == profileId) {
+          currentDriverBusId = b.id;
+          return;
+        }
+      }
+    }
+    if (buses.isNotEmpty) currentDriverBusId = buses.first.id;
+  }
+
+  GuardianDemoProfile guardianProfile = const GuardianDemoProfile(
+    fullName:           '',
+    phone:              '',
+    email:              '',
+    relationship:       '',
+    authorizationNote:  '',
+    assignedChildNames: [],
+  );
+
+  PendingGuardianInvite? latestGuardianSubmission;
+  bool guardianNotifyEnabled = true;
+
+  final Set<String> releasedPickupRequestIds = {};
+  final Map<String, DriverScanPhase>   _driverScanPhase          = {};
+  final Map<String, GuardianPickupIntent> guardianPickupIntentByChildId = {};
+
+  // Demo gate directory — used when Supabase is not configured
+  List<GatePickupPersonProfile> gatePickupDirectory = [
+    const GatePickupPersonProfile(
+      nationalId:       '1234567890',
+      phoneDigits:      '966501112233',
+      displayPhone:     '+966 50 111 2233',
+      fullName:         'Khalid Al-Otaibi',
+      kind:             GatePickupPersonKind.parent,
+      linkedChildren:   ['Noah Khaled', 'Lama Khaled'],
+      authorizationLabel:  'Verified parent · Active',
+      allowedActionLabel:  'Pickup & drop-off',
+    ),
+    const GatePickupPersonProfile(
+      nationalId:       '9876543210',
+      phoneDigits:      '96650004411',
+      displayPhone:     '+966 50 000 4411',
+      fullName:         'Mohammed Ali',
+      kind:             GatePickupPersonKind.guardian,
+      linkedChildren:   ['Saad Khaled', 'Sara Khaled'],
+      authorizationLabel:  'Verified guardian · School approved',
+      allowedActionLabel:  'Pickup only',
+    ),
+    const GatePickupPersonProfile(
+      nationalId:       '5555555555',
+      phoneDigits:      '966551234567',
+      displayPhone:     '+966 55 123 4567',
+      fullName:         'Fatima Hassan',
+      kind:             GatePickupPersonKind.parent,
+      linkedChildren:   ['Khalid Jr.'],
+      authorizationLabel:  'Verified parent',
+      allowedActionLabel:  'Pickup & drop-off',
+    ),
   ];
 
-  List<Bus> buses = [
-    Bus(id: 'b1', name: 'Bus 12A - North Route', driverId: 'd1', status: BusStatus.stationary),
-  ];
+  // ── Constructor ───────────────────────────────────────────────────────────
+  MockState() {
+    if (isSupabaseConfigured) {
+      _clearData();
+      _initSupabase();
+    } else {
+      _loadDemoData();
+    }
+  }
 
-  List<ParentRequest> requests = [
-    ParentRequest(id: 'r1', studentId: 's1', type: 'Early Pickup', status: RequestStatus.pending, date: DateTime.now()),
-  ];
+  // ── Supabase initialization ───────────────────────────────────────────────
+  bool _manualSignInInProgress = false;
+
+  void _initSupabase() {
+    _authSub = supabase.auth.onAuthStateChange.listen((event) {
+      supabaseUser = event.session?.user;
+      if (supabaseUser != null) {
+        // Skip if signInWithEmailPassword is already awaiting _onUserSignedIn.
+        if (!_manualSignInInProgress) _onUserSignedIn();
+      } else {
+        _clearData();
+        _role = UserRole.none;
+      }
+      notifyListeners();
+    });
+
+    // Restore session if the app was re-opened
+    final existing = supabase.auth.currentSession;
+    if (existing != null) {
+      supabaseUser = existing.user;
+      _onUserSignedIn();
+    }
+  }
+
+  Future<void> _onUserSignedIn() async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      currentProfile = await AuthService.instance.fetchProfile();
+      if (currentProfile == null) {
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      _role = _roleFromString(currentProfile!.role);
+      await _loadRealData();
+      _setupRealtimeSubscriptions();
+    } catch (e) {
+      debugPrint('GateFlow: error loading user data: $e');
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> _loadRealData() async {
+    final profile = currentProfile;
+    if (profile == null) return;
+    final schoolId = profile.schoolId;
+
+    // Load students
+    if (schoolId != null) {
+      switch (_role) {
+        case UserRole.schoolStaff:
+        case UserRole.busDriver:
+          final dbStudents = await StudentService.instance
+              .fetchAll(schoolId: schoolId);
+          students = dbStudents.map(_mapStudent).toList();
+          break;
+        case UserRole.parent:
+          final dbStudents = await StudentService.instance
+              .fetchForParent(parentId: profile.id);
+          students           = dbStudents.map(_mapStudent).toList();
+          parentDemoChildren = dbStudents.map(_mapDemoChild).toList();
+          break;
+        case UserRole.guardian:
+          // Guardian's linked students loaded below after fetching guardian record
+          break;
+        case UserRole.none:
+          break;
+      }
+    }
+
+    // Load buses
+    if (schoolId != null &&
+        (_role == UserRole.schoolStaff ||
+            _role == UserRole.busDriver ||
+            _role == UserRole.parent)) {
+      final dbBuses = await BusService.instance.fetchAll(schoolId: schoolId);
+      buses = dbBuses.map(_mapBus).toList();
+
+      // For bus driver: record which bus belongs to them
+      if (_role == UserRole.busDriver) {
+        final myBus = dbBuses.where((b) => b.driverId == profile.id).toList();
+        currentDriverBusId = myBus.isNotEmpty ? myBus.first.id : null;
+        resolveDriverBusContext();
+      }
+    }
+
+    // Load requests
+    if (_role == UserRole.parent) {
+      final dbRequests =
+          await RequestService.instance.fetchByParent(parentId: profile.id);
+      requests = dbRequests.map(_mapRequest).toList();
+    }
+    if (_role == UserRole.schoolStaff && schoolId != null) {
+      final dbRequests =
+          await RequestService.instance.fetchBySchool(schoolId: schoolId);
+      requests = dbRequests.map(_mapRequest).toList();
+
+      // Build student name lookup for time-request display
+      final nameById = Map.fromEntries(
+          students.map((s) => MapEntry(s.id, s.name)));
+      schoolTimeRequests = dbRequests
+          .where((r) =>
+              r.type == 'Early Pickup' || r.type == 'Late Drop-off')
+          .map((r) => _mapTimeRequestWithName(r, nameById))
+          .toList();
+    }
+
+    // Load operational alerts
+    if (schoolId != null &&
+        (_role == UserRole.schoolStaff || _role == UserRole.busDriver)) {
+      final dbAlerts = await OperationalAlertService.instance
+          .fetchActive(schoolId: schoolId);
+      operationalAlerts = dbAlerts
+          .map((a) => OperationalAlert(
+                id:        a.id,
+                title:     a.title,
+                body:      a.body,
+                createdAt: a.createdAt,
+              ))
+          .toList();
+    }
+
+    // Load guardian profile + linked students for guardian role
+    if (_role == UserRole.guardian) {
+      try {
+        final rows = await supabase
+            .from('guardians')
+            .select('*, guardian_students(student_id)')
+            .eq('guardian_user_id', profile.id)
+            .eq('status', 'approved');
+
+        if (rows.isNotEmpty) {
+          final g = DbGuardian.fromJson(rows.first as Map<String, dynamic>);
+
+          List<String> childNames = [];
+          if (g.studentIds.isNotEmpty) {
+            final studentRows = await supabase
+                .from('students')
+                .select()
+                .inFilter('id', g.studentIds);
+
+            final dbStudents =
+                (studentRows as List).map((r) => DbStudent.fromJson(r as Map<String, dynamic>)).toList();
+            childNames         = dbStudents.map((s) => s.name).toList();
+            parentDemoChildren = dbStudents.map(_mapDemoChild).toList();
+            students           = dbStudents.map(_mapStudent).toList();
+          }
+
+          guardianProfile = GuardianDemoProfile(
+            fullName:          g.fullName,
+            phone:             g.phone ?? '',
+            email:             g.email ?? profile.phone ?? '',
+            relationship:      g.relationship ?? 'Guardian',
+            authorizationNote: 'Active · Verified by school',
+            assignedChildNames: childNames,
+          );
+        }
+      } catch (e) {
+        debugPrint('GateFlow: error loading guardian profile: $e');
+      }
+    }
+
+    // Load school-admin directories (parents, drivers, guardians, schedules)
+    if (_role == UserRole.schoolStaff && schoolId != null) {
+      await _loadSchoolDirectories(schoolId);
+    }
+  }
+
+  /// Loads the parent / driver / guardian / schedule directories used by the
+  /// school-admin System Management pages. Safe to call again after mutations.
+  Future<void> _loadSchoolDirectories(String schoolId) async {
+    try {
+      schoolParents = await ProfileService.instance
+          .fetchBySchool(schoolId: schoolId, roleFilter: 'parent');
+      schoolDrivers = await ProfileService.instance
+          .fetchBySchool(schoolId: schoolId, roleFilter: 'bus_driver');
+      schoolGuardians =
+          await GuardianService.instance.fetchBySchool(schoolId: schoolId);
+      dailySchedules =
+          await ScheduleService.instance.fetchToday(schoolId: schoolId);
+    } catch (e) {
+      debugPrint('GateFlow: error loading school directories: $e');
+    }
+  }
+
+  /// Public reload for school-admin lists after a mutation.
+  Future<void> reloadSchoolDirectories() async {
+    final schoolId = currentProfile?.schoolId;
+    if (!isSupabaseConfigured || schoolId == null) return;
+    await _loadSchoolDirectories(schoolId);
+    notifyListeners();
+  }
+
+  void _setupRealtimeSubscriptions() {
+    final profile  = currentProfile;
+    final schoolId = profile?.schoolId;
+    if (schoolId == null) return;
+
+    // Students
+    _studentsSub?.cancel();
+    _studentsSub = StudentService.instance
+        .streamSchool(schoolId: schoolId)
+        .listen((rows) {
+      students = rows.map((r) => _mapStudent(DbStudent.fromJson(r))).toList();
+      notifyListeners();
+    });
+
+    // Buses
+    _busesSub?.cancel();
+    _busesSub = BusService.instance
+        .streamSchool(schoolId: schoolId)
+        .listen((rows) {
+      buses = rows.map((r) => _mapBus(DbBus.fromJson(r))).toList();
+      notifyListeners();
+    });
+
+    // Requests realtime. Staff need every request in their school (RLS scopes
+    // the school-wide stream); parents only their own.
+    if (profile != null) {
+      _requestsSub?.cancel();
+      if (_role == UserRole.schoolStaff) {
+        _requestsSub = RequestService.instance.streamAll().listen((rows) {
+          final dbRequests =
+              rows.map((r) => DbPickupRequest.fromJson(r)).toList();
+          requests = dbRequests.map(_mapRequest).toList();
+
+          final nameById =
+              Map.fromEntries(students.map((s) => MapEntry(s.id, s.name)));
+          schoolTimeRequests = dbRequests
+              .where((r) =>
+                  r.type == 'Early Pickup' || r.type == 'Late Drop-off')
+              .map((r) => _mapTimeRequestWithName(r, nameById))
+              .toList();
+          notifyListeners();
+        });
+      } else {
+        _requestsSub = RequestService.instance
+            .streamByParent(parentId: profile.id)
+            .listen((rows) {
+          requests =
+              rows.map((r) => _mapRequest(DbPickupRequest.fromJson(r))).toList();
+          notifyListeners();
+        });
+      }
+    }
+
+    // Operational alerts
+    _alertsSub?.cancel();
+    _alertsSub = OperationalAlertService.instance
+        .streamActive(schoolId: schoolId)
+        .listen((rows) {
+      operationalAlerts = rows
+          .map((r) => DbOperationalAlert.fromJson(r))
+          .map((a) => OperationalAlert(
+                id:        a.id,
+                title:     a.title,
+                body:      a.body,
+                createdAt: a.createdAt,
+              ))
+          .toList();
+      notifyListeners();
+    });
+  }
+
+  // ── Demo data fallback ────────────────────────────────────────────────────
+  void _loadDemoData() {
+    students = [
+      Student(id: 's1', name: 'Khalid Jr.',  grade: 'Grade 3', status: StudentStatus.atSchool,      busId: 'b1', dropOffLocation: 'Zone B · Al Yasmin St 14', lastMockUpdateLabel: '7:45 AM · Arrived school'),
+      Student(id: 's2', name: 'Aisha',        grade: 'Grade 1', status: StudentStatus.atHome,         lastMockUpdateLabel: 'Yesterday · Picked up by car'),
+      Student(id: 's3', name: 'Noah Khaled',  grade: 'Grade 1', status: StudentStatus.onBusToSchool, busId: 'b1', dropOffLocation: 'Zone A · Block 5, Al Narjis', lastMockUpdateLabel: '7:50 AM · Boarded'),
+      Student(id: 's4', name: 'Lama Khaled',  grade: 'Grade 1', status: StudentStatus.atSchool,      busId: 'b1', dropOffLocation: 'Zone C · King Fahd Rd', lastMockUpdateLabel: '7:40 AM · Arrived school'),
+    ];
+    buses = [
+      Bus(id: 'b1', name: 'Bus 12A', routeLabel: 'North Route · Zones A–D',
+          driverName: 'Hassan (You)', driverId: 'd1',
+          status: BusStatus.onRouteToHome, lastUpdateLabel: '2 min ago · GPS'),
+    ];
+    currentDriverBusId = 'b1';
+    parentDemoChildren = [
+      DemoParentChild(id: 'pc1', name: 'Saad Khaled', grade: 'Grade 6', transport: DemoChildTransport.car),
+      DemoParentChild(id: 'pc2', name: 'Sara Khaled', grade: 'Grade 6', transport: DemoChildTransport.car),
+      DemoParentChild(id: 'pc3', name: 'Noah Khaled', grade: 'Grade 1', transport: DemoChildTransport.bus, busId: 'b1'),
+      DemoParentChild(id: 'pc4', name: 'Lama Khaled', grade: 'Grade 1', transport: DemoChildTransport.bus, busId: 'b1'),
+    ];
+    requests = [
+      ParentRequest(id: 'r1', studentId: 'pc3', type: 'Early Pickup',  status: RequestStatus.pending,   date: DateTime.now(),                              pickupPersonSummary: 'Parent · Khalid', timeLabel: '3:30 PM'),
+      ParentRequest(id: 'r0', studentId: 'pc2', type: 'Late Drop-off', status: RequestStatus.approved,  date: DateTime.now().subtract(const Duration(days: 1)), pickupPersonSummary: 'Guardian · Deem', timeLabel: '4:00 PM'),
+    ];
+    schoolTimeRequests = [
+      SchoolTimeRequestEntry(id: 'tr_e1', childName: 'Saad Ahmed',   grade: 'Grade 4', reason: 'Doctor appointment', timeLabel: '12:30 PM', requestedBy: 'Parent · Ahmed',   isEarly: true,  status: RequestStatus.pending),
+      SchoolTimeRequestEntry(id: 'tr_e2', childName: 'Sara Khaled',  grade: 'Grade 6', reason: 'Family event',       timeLabel: '1:00 PM',  requestedBy: 'Guardian · Deem', isEarly: true,  status: RequestStatus.pending),
+      SchoolTimeRequestEntry(id: 'tr_l1', childName: 'Noah Khaled',  grade: 'Grade 1', reason: 'Traffic delay',      timeLabel: '8:30 AM',  requestedBy: 'Parent · Khalid', isEarly: false, status: RequestStatus.pending),
+      SchoolTimeRequestEntry(id: 'tr_l2', childName: 'Yousef Ali',   grade: 'Grade 5', reason: 'Doctor appointment', timeLabel: '9:15 AM',  requestedBy: 'Parent · Ali',    isEarly: false, status: RequestStatus.approved),
+    ];
+    operationalAlerts = [
+      OperationalAlert(id: 'a1', title: 'Bus 12A departure delayed',   body: 'North route running ~8 min behind. Gate team notified.', createdAt: DateTime.now()),
+      OperationalAlert(id: 'a2', title: 'Early pickup spike',           body: '3 early dismissals clustered at 12:30 PM — monitor gate queue.', createdAt: DateTime.now()),
+    ];
+  }
+
+  // ── Clear data (used when Supabase is configured & user is signed out) ────
+  void _clearData() {
+    students            = [];
+    buses               = [];
+    requests            = [];
+    schoolTimeRequests  = [];
+    operationalAlerts   = [];
+    parentDemoChildren  = [];
+    schoolParents       = [];
+    schoolDrivers       = [];
+    schoolGuardians     = [];
+    dailySchedules      = [];
+    gatePickupDirectory = [];
+    currentDriverBusId  = null;
+    guardianProfile     = const GuardianDemoProfile(
+      fullName:           '',
+      phone:              '',
+      email:              '',
+      relationship:       '',
+      authorizationNote:  '',
+      assignedChildNames: [],
+    );
+  }
+
+  // ── DB → UI-model converters ──────────────────────────────────────────────
+  static StudentStatus _studentStatusFromDb(String s) {
+    switch (s) {
+      case 'on_bus_to_school': return StudentStatus.onBusToSchool;
+      case 'at_school':        return StudentStatus.atSchool;
+      case 'on_bus_to_home':   return StudentStatus.onBusToHome;
+      case 'picked_up_by_car': return StudentStatus.pickedUpByCar;
+      default:                 return StudentStatus.atHome;
+    }
+  }
+
+  static String _studentStatusToDb(StudentStatus s) {
+    switch (s) {
+      case StudentStatus.onBusToSchool: return 'on_bus_to_school';
+      case StudentStatus.atSchool:      return 'at_school';
+      case StudentStatus.onBusToHome:   return 'on_bus_to_home';
+      case StudentStatus.pickedUpByCar: return 'picked_up_by_car';
+      default:                          return 'at_home';
+    }
+  }
+
+  static BusStatus _busStatusFromDb(String s) {
+    switch (s) {
+      case 'on_route_to_school': return BusStatus.onRouteToSchool;
+      case 'on_route_to_home':   return BusStatus.onRouteToHome;
+      default:                   return BusStatus.stationary;
+    }
+  }
+
+  static String _busStatusToDb(BusStatus s) {
+    switch (s) {
+      case BusStatus.onRouteToSchool: return 'on_route_to_school';
+      case BusStatus.onRouteToHome:   return 'on_route_to_home';
+      default:                        return 'stationary';
+    }
+  }
+
+  static RequestStatus _requestStatusFromDb(String s) {
+    switch (s) {
+      case 'approved': return RequestStatus.approved;
+      case 'rejected': return RequestStatus.rejected;
+      default:         return RequestStatus.pending;
+    }
+  }
+
+  static UserRole _roleFromString(String r) {
+    switch (r) {
+      case 'school_staff': return UserRole.schoolStaff;
+      case 'bus_driver':   return UserRole.busDriver;
+      case 'guardian':     return UserRole.guardian;
+      default:             return UserRole.parent;
+    }
+  }
+
+  static Student _mapStudent(DbStudent db) => Student(
+        id:                   db.id,
+        name:                 db.name,
+        grade:                db.grade,
+        status:               _studentStatusFromDb(db.status),
+        busId:                db.busId,
+        dropOffLocation:      db.pickupLocationLabel,
+        lastMockUpdateLabel:  db.lastUpdateLabel ?? '',
+      );
+
+  static DemoParentChild _mapDemoChild(DbStudent db) => DemoParentChild(
+        id:        db.id,
+        name:      db.name,
+        grade:     db.grade,
+        transport: db.transportType == 'bus'
+            ? DemoChildTransport.bus
+            : DemoChildTransport.car,
+        busId: db.busId,
+      );
+
+  static Bus _mapBus(DbBus db) => Bus(
+        id:             db.id,
+        name:           db.name,
+        routeLabel:     db.routeLabel ?? '',
+        driverName:     'Driver',
+        driverId:       db.driverId ?? '',
+        status:         _busStatusFromDb(db.status),
+        lastUpdateLabel: db.lastUpdateLabel,
+      );
+
+  static ParentRequest _mapRequest(DbPickupRequest db) => ParentRequest(
+        id:                   db.id,
+        studentId:            db.studentId,
+        type:                 db.type,
+        status:               _requestStatusFromDb(db.status),
+        date:                 db.createdAt,
+        pickupPersonSummary:  db.pickupPersonSummary,
+        timeLabel:            db.timeLabel,
+      );
+
+  static SchoolTimeRequestEntry _mapTimeRequest(DbPickupRequest db) =>
+      _mapTimeRequestWithName(db, const {});
+
+  static SchoolTimeRequestEntry _mapTimeRequestWithName(
+      DbPickupRequest db, Map<String, String> nameById) =>
+      SchoolTimeRequestEntry(
+        id:          db.id,
+        childName:   nameById[db.studentId] ?? db.studentId,
+        grade:       '',
+        reason:      db.notes ?? '',
+        timeLabel:   db.timeLabel ?? '',
+        requestedBy: db.requestedBy,
+        isEarly:     db.type == 'Early Pickup',
+        status:      _requestStatusFromDb(db.status),
+      );
+
+  // ── Auth actions ──────────────────────────────────────────────────────────
+
+  Future<String?> signInWithEmailPassword(String email, String password) async {
+    if (!isSupabaseConfigured) {
+      loginAs(_inferRoleFromEmail(email));
+      return null;
+    }
+    try {
+      authError = null;
+      _manualSignInInProgress = true;
+      await AuthService.instance.signIn(email: email, password: password);
+      // Auth listener fires async — load profile here so the caller
+      // receives the correct role immediately on return.
+      supabaseUser = supabase.auth.currentUser;
+      await _onUserSignedIn();
+      return null;
+    } on AuthException catch (e) {
+      authError = e.message;
+      notifyListeners();
+      return e.message;
+    } catch (e) {
+      authError = e.toString();
+      notifyListeners();
+      return e.toString();
+    } finally {
+      _manualSignInInProgress = false;
+    }
+  }
+
+  Future<void> signOut() async {
+    await _authSub?.cancel();
+    await _studentsSub?.cancel();
+    await _busesSub?.cancel();
+    await _requestsSub?.cancel();
+    await _alertsSub?.cancel();
+
+    if (isSupabaseConfigured) {
+      await AuthService.instance.signOut();
+    }
+
+    supabaseUser    = null;
+    currentProfile  = null;
+    _role           = UserRole.none;
+    _clearData();
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seed demo accounts (first-run setup)
+  // ---------------------------------------------------------------------------
+  Future<List<String>> seedDemoAccounts() async {
+    if (!isSupabaseConfigured) {
+      return ['Supabase is not configured — cannot seed accounts.'];
+    }
+    return SeedService.instance.seedDemoAccounts();
+  }
+
+  // Keep the original demo-mode login for the quick-access chips
+  void loginAs(UserRole role) {
+    _role = role;
+    if (role == UserRole.busDriver) resolveDriverBusContext();
+    notifyListeners();
+  }
+
+  UserRole _inferRoleFromEmail(String email) {
+    if (email.contains('school') || email.contains('admin'))  return UserRole.schoolStaff;
+    if (email.contains('bus')   || email.contains('driver'))  return UserRole.busDriver;
+    if (email.contains('guardian'))                           return UserRole.guardian;
+    return UserRole.parent;
+  }
+
+  // ── Student mutations ─────────────────────────────────────────────────────
 
   void updateStudentStatus(String id, StudentStatus newStatus) {
-    var student = students.firstWhere((s) => s.id == id);
+    final student = students.firstWhere((s) => s.id == id);
     student.status = newStatus;
     notifyListeners();
+
+    if (isSupabaseConfigured) {
+      StudentService.instance.updateStatus(
+        id:     id,
+        status: _studentStatusToDb(newStatus),
+      );
+    }
+  }
+
+  void toggleChildAbsent(String childId, bool absent) {
+    final c = parentDemoChildren.firstWhere((e) => e.id == childId);
+    c.absentToday = absent;
+    notifyListeners();
+  }
+
+  // ── Bus mutations ─────────────────────────────────────────────────────────
+
+  void updateBusStatus(String id, BusStatus newStatus) {
+    final bus = buses.firstWhere((b) => b.id == id);
+    bus.status = newStatus;
+    notifyListeners();
+
+    if (isSupabaseConfigured) {
+      BusService.instance.updateStatus(
+        id:     id,
+        status: _busStatusToDb(newStatus),
+      );
+    }
+  }
+
+  // ── Request mutations ─────────────────────────────────────────────────────
+
+  ParentRequest submitNewParentRequest({
+    required String studentId,
+    required String type,
+    required String timeLabel,
+    required String pickupPersonSummary,
+  }) {
+    final id  = 'r${DateTime.now().millisecondsSinceEpoch}';
+    final req = ParentRequest(
+      id:                  id,
+      studentId:           studentId,
+      type:                type,
+      status:              RequestStatus.pending,
+      date:                DateTime.now(),
+      pickupPersonSummary: pickupPersonSummary,
+      timeLabel:           timeLabel,
+    );
+    requests = [...requests, req];
+    notifyListeners();
+
+    if (isSupabaseConfigured && currentProfile != null) {
+      RequestService.instance.submit(
+        studentId:           studentId,
+        requestedBy:         currentProfile!.id,
+        type:                type,
+        timeLabel:           timeLabel,
+        pickupPersonSummary: pickupPersonSummary,
+      );
+    }
+
+    return req;
   }
 
   void updateRequestStatus(String id, RequestStatus newStatus) {
-    var req = requests.firstWhere((r) => r.id == id);
+    final req = requests.firstWhere((r) => r.id == id);
     req.status = newStatus;
     notifyListeners();
+
+    if (isSupabaseConfigured && currentProfile != null) {
+      RequestService.instance.reviewRequest(
+        id:         id,
+        status:     newStatus == RequestStatus.approved ? 'approved' : 'rejected',
+        reviewedBy: currentProfile!.id,
+      );
+    }
   }
 
-  void updateBusStatus(String id, BusStatus newStatus) {
-    var bus = buses.firstWhere((b) => b.id == id);
-    bus.status = newStatus;
+  void updateSchoolTimeRequest(String id, RequestStatus status) {
+    final entry = schoolTimeRequests.firstWhere((x) => x.id == id);
+    entry.status = status;
+    notifyListeners();
+
+    if (isSupabaseConfigured && currentProfile != null) {
+      RequestService.instance.reviewRequest(
+        id:         id,
+        status:     status == RequestStatus.approved ? 'approved' : 'rejected',
+        reviewedBy: currentProfile!.id,
+      );
+    }
+  }
+
+  bool releaseStudentAfterVerification(String requestId) {
+    try {
+      final r = requests.firstWhere((e) => e.id == requestId);
+      if (r.status != RequestStatus.approved) return false;
+      releasedPickupRequestIds.add(requestId);
+      notifyListeners();
+
+      if (isSupabaseConfigured) {
+        RequestService.instance.releaseAtGate(requestId);
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  List<ParentRequest> approvedParentRequestsAwaitingPickup() => requests
+      .where((r) =>
+          r.status == RequestStatus.approved &&
+          !releasedPickupRequestIds.contains(r.id))
+      .toList();
+
+  // ── Guardian mutations ────────────────────────────────────────────────────
+
+  void submitPendingGuardianInvite(PendingGuardianInvite invite) {
+    latestGuardianSubmission = invite;
+    notifyListeners();
+
+    if (isSupabaseConfigured && currentProfile != null) {
+      GuardianService.instance.submit(
+        parentId:     currentProfile!.id,
+        fullName:     invite.fullName,
+        relationship: invite.relationship,
+        phone:        invite.phone,
+      );
+    }
+  }
+
+  void setGuardianNotifyEnabled(bool value) {
+    guardianNotifyEnabled = value;
     notifyListeners();
   }
 
-  void loginAs(UserRole role) {
-    currentUserRole = role;
+  // ── Operational alerts ────────────────────────────────────────────────────
+
+  Future<void> addOperationalAlert({
+    required String title,
+    required String body,
+  }) async {
+    final alert = OperationalAlert(
+      id:        DateTime.now().millisecondsSinceEpoch.toString(),
+      title:     title,
+      body:      body,
+      createdAt: DateTime.now(),
+    );
+    operationalAlerts.insert(0, alert);
     notifyListeners();
+
+    if (isSupabaseConfigured && currentProfile?.schoolId != null) {
+      await OperationalAlertService.instance.create(
+        schoolId: currentProfile!.schoolId!,
+        title:    title,
+        body:     body,
+      );
+    }
+  }
+
+  // ===========================================================================
+  // SCHOOL-ADMIN CRUD (System Management)
+  //
+  // Each method persists to Supabase and reloads the affected list so the
+  // UI updates immediately (realtime also reconciles students/buses).
+  // ===========================================================================
+
+  String? get _schoolId => currentProfile?.schoolId;
+
+  // ── Students ───────────────────────────────────────────────────────────────
+
+  Future<void> addStudent({
+    required String name,
+    required String grade,
+    String transportType = 'car',
+    String? busId,
+    String? parentId,
+    String? pickupLocationLabel,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final schoolId = _schoolId;
+    if (!isSupabaseConfigured || schoolId == null) {
+      throw StateError('No school context — cannot add student.');
+    }
+    final created = await StudentService.instance.add(
+      name:                  name,
+      grade:                 grade,
+      schoolId:              schoolId,
+      transportType:         transportType,
+      busId:                 (busId != null && busId.isNotEmpty) ? busId : null,
+      pickupLocationLabel:   pickupLocationLabel,
+      latitude:              latitude,
+      longitude:             longitude,
+    );
+    if (parentId != null && parentId.isNotEmpty) {
+      await StudentService.instance
+          .linkToParent(studentId: created.id, parentId: parentId);
+    }
+    students = [...students, _mapStudent(created)];
+    notifyListeners();
+  }
+
+  Future<void> updateStudentRecord({
+    required String id,
+    String? name,
+    String? grade,
+    String? transportType,
+    String? busId,
+  }) async {
+    if (!isSupabaseConfigured) return;
+    await StudentService.instance.update(
+      id:            id,
+      name:          name,
+      grade:         grade,
+      transportType: transportType,
+      busId:         busId,
+    );
+    await _reloadStudents();
+  }
+
+  Future<void> deleteStudent(String id) async {
+    if (!isSupabaseConfigured) return;
+    await StudentService.instance.delete(id);
+    students = students.where((s) => s.id != id).toList();
+    notifyListeners();
+  }
+
+  Future<void> _reloadStudents() async {
+    final schoolId = _schoolId;
+    if (schoolId == null) return;
+    final dbStudents = await StudentService.instance.fetchAll(schoolId: schoolId);
+    students = dbStudents.map(_mapStudent).toList();
+    notifyListeners();
+  }
+
+  // ── Buses ───────────────────────────────────────────────────────────────────
+
+  Future<void> addBus({
+    required String name,
+    String? routeLabel,
+    String? plateNumber,
+    String? driverId,
+  }) async {
+    final schoolId = _schoolId;
+    if (!isSupabaseConfigured || schoolId == null) {
+      throw StateError('No school context — cannot add bus.');
+    }
+    final created = await BusService.instance.add(
+      name:        name,
+      schoolId:    schoolId,
+      routeLabel:  routeLabel,
+      plateNumber: plateNumber,
+      driverId:    (driverId != null && driverId.isNotEmpty) ? driverId : null,
+    );
+    buses = [...buses, _mapBus(created)];
+    notifyListeners();
+  }
+
+  Future<void> updateBusRecord({
+    required String id,
+    String? name,
+    String? routeLabel,
+    String? plateNumber,
+    String? driverId,
+  }) async {
+    if (!isSupabaseConfigured) return;
+    await BusService.instance.update(
+      id:          id,
+      name:        name,
+      routeLabel:  routeLabel,
+      plateNumber: plateNumber,
+      driverId:    driverId,
+    );
+    await _reloadBuses();
+  }
+
+  Future<void> deleteBus(String id) async {
+    if (!isSupabaseConfigured) return;
+    await BusService.instance.delete(id);
+    buses = buses.where((b) => b.id != id).toList();
+    notifyListeners();
+  }
+
+  /// Assign a driver to a bus (clearing the driver from any previously
+  /// assigned bus). Pass [busId] = null to leave the driver unassigned.
+  Future<void> assignDriverToBus({
+    required String driverId,
+    String? busId,
+  }) async {
+    if (!isSupabaseConfigured) return;
+    for (final b in buses) {
+      if (b.driverId == driverId && b.id != busId) {
+        await BusService.instance.setDriver(busId: b.id, driverId: null);
+      }
+    }
+    if (busId != null && busId.isNotEmpty) {
+      await BusService.instance.setDriver(busId: busId, driverId: driverId);
+    }
+    await _reloadBuses();
+  }
+
+  /// The id of the bus currently assigned to [driverId], or null.
+  String? busIdForDriver(String driverId) {
+    for (final b in buses) {
+      if (b.driverId == driverId) return b.id;
+    }
+    return null;
+  }
+
+  Future<void> _reloadBuses() async {
+    final schoolId = _schoolId;
+    if (schoolId == null) return;
+    final dbBuses = await BusService.instance.fetchAll(schoolId: schoolId);
+    buses = dbBuses.map(_mapBus).toList();
+    notifyListeners();
+  }
+
+  /// Resolve a human-readable driver name for a bus from the loaded driver
+  /// directory (school-admin). Falls back to the bus's own label.
+  String busDriverName(Bus bus) {
+    if (bus.driverId.isEmpty) return 'Unassigned';
+    for (final d in schoolDrivers) {
+      if (d.id == bus.driverId) return d.fullName;
+    }
+    return bus.driverName.isNotEmpty ? bus.driverName : 'Assigned driver';
+  }
+
+  // ── Guardians (admin review) ─────────────────────────────────────────────────
+
+  Future<void> reviewGuardianRequest(String id, RequestStatus status) async {
+    if (!isSupabaseConfigured || currentProfile == null) return;
+    await GuardianService.instance.reviewGuardian(
+      id:         id,
+      status:     status == RequestStatus.approved ? 'approved' : 'rejected',
+      reviewedBy: currentProfile!.id,
+    );
+    await reloadSchoolDirectories();
+  }
+
+  Future<void> deleteGuardianRecord(String id) async {
+    if (!isSupabaseConfigured) return;
+    await GuardianService.instance.delete(id);
+    schoolGuardians = schoolGuardians.where((g) => g.id != id).toList();
+    notifyListeners();
+  }
+
+  DbGuardian? guardianById(String id) {
+    for (final g in schoolGuardians) {
+      if (g.id == id) return g;
+    }
+    return null;
+  }
+
+  // ── Schedules ────────────────────────────────────────────────────────────────
+
+  Future<void> createSchedule({
+    required String className,
+    required String grade,
+    required DateTime date,
+    String? arrivalTime,
+    String? departureTime,
+    String? notes,
+  }) async {
+    final schoolId = _schoolId;
+    if (!isSupabaseConfigured || schoolId == null) {
+      throw StateError('No school context — cannot create schedule.');
+    }
+    await ScheduleService.instance.create(
+      schoolId:      schoolId,
+      className:     className,
+      grade:         grade,
+      date:          date,
+      arrivalTime:   arrivalTime,
+      departureTime: departureTime,
+      notes:         notes,
+      createdBy:     currentProfile?.id,
+    );
+    await reloadSchoolDirectories();
+  }
+
+  Future<void> updateScheduleRecord({
+    required String id,
+    String? className,
+    String? grade,
+    DateTime? date,
+    String? arrivalTime,
+    String? departureTime,
+    String? notes,
+  }) async {
+    if (!isSupabaseConfigured) return;
+    await ScheduleService.instance.update(
+      id:            id,
+      className:     className,
+      grade:         grade,
+      date:          date,
+      arrivalTime:   arrivalTime,
+      departureTime: departureTime,
+      notes:         notes,
+    );
+    await reloadSchoolDirectories();
+  }
+
+  Future<void> deleteSchedule(String id) async {
+    if (!isSupabaseConfigured) return;
+    await ScheduleService.instance.delete(id);
+    dailySchedules = dailySchedules.where((s) => s.id != id).toList();
+    notifyListeners();
+  }
+
+  // ── Parents & drivers (profiles) ─────────────────────────────────────────────
+
+  Future<void> updateProfileRecord({
+    required String id,
+    String? fullName,
+    String? phone,
+    String? nationalId,
+  }) async {
+    if (!isSupabaseConfigured) return;
+    await ProfileService.instance.update(
+      id:         id,
+      fullName:   fullName,
+      phone:      phone,
+      nationalId: nationalId,
+    );
+    await reloadSchoolDirectories();
+  }
+
+  Future<void> deactivateProfile(String id) async {
+    if (!isSupabaseConfigured) return;
+    await ProfileService.instance.deactivate(id);
+    await reloadSchoolDirectories();
+  }
+
+  /// Generate a new login password for a parent/driver and refresh local data.
+  Future<AdminCreateResult> resetProfilePassword(String userId) async {
+    final result = await AdminService.instance.resetUserPassword(userId: userId);
+    if (result.error == null) await reloadSchoolDirectories();
+    return result;
+  }
+
+  DbProfile? schoolProfileById(String id) {
+    for (final p in [...schoolParents, ...schoolDrivers]) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  /// Create a parent login account via the admin Edge Function.
+  /// On success the result carries the one-time temp password to show staff.
+  Future<AdminCreateResult> createParentAccount({
+    required String email,
+    required String fullName,
+    String? phone,
+    String? nationalId,
+  }) async {
+    final schoolId = _schoolId;
+    if (!isSupabaseConfigured || schoolId == null) {
+      return const AdminCreateResult(
+          error: 'No school context — cannot create parent.');
+    }
+    final result = await AdminService.instance.createUserReturningId(
+      email:      email,
+      fullName:   fullName,
+      role:       'parent',
+      schoolId:   schoolId,
+      phone:      phone,
+      nationalId: nationalId,
+    );
+    if (result.error == null) await reloadSchoolDirectories();
+    return result;
+  }
+
+  /// Create a bus-driver login account via the admin Edge Function, optionally
+  /// assigning them to a bus. Returns null on success or an error message.
+  Future<AdminCreateResult> createDriverAccount({
+    required String email,
+    required String fullName,
+    String? phone,
+    String? nationalId,
+    String? busId,
+  }) async {
+    final schoolId = _schoolId;
+    if (!isSupabaseConfigured || schoolId == null) {
+      return const AdminCreateResult(
+          error: 'No school context — cannot create driver.');
+    }
+    final result = await AdminService.instance.createUserReturningId(
+      email:      email,
+      fullName:   fullName,
+      role:       'bus_driver',
+      schoolId:   schoolId,
+      phone:      phone,
+      nationalId: nationalId,
+    );
+    if (result.error != null) return result;
+
+    if (busId != null && busId.isNotEmpty && result.userId != null) {
+      await BusService.instance.update(id: busId, driverId: result.userId);
+    }
+    await reloadSchoolDirectories();
+    await _reloadBuses();
+    return result;
+  }
+
+  // ── Driver scan logic ─────────────────────────────────────────────────────
+
+  /// Best-effort persistence of the triple-scan operational alert. Drivers may
+  /// be blocked by RLS on older schemas, so failures are swallowed.
+  Future<void> _persistScanAlert(
+      String schoolId, String title, String body) async {
+    try {
+      await OperationalAlertService.instance.create(
+        schoolId:  schoolId,
+        title:     title,
+        body:      body,
+        severity:  'warning',
+        createdBy: currentProfile?.id,
+      );
+    } catch (e) {
+      debugPrint('GateFlow: could not persist scan alert: $e');
+    }
+  }
+
+  DriverScanOutcome recordDriverBoardingScan(String studentId) {
+    final student = students.firstWhere((s) => s.id == studentId);
+    final prev    = _driverScanPhase[studentId] ?? DriverScanPhase.idle;
+    DriverScanPhase next = prev;
+
+    switch (prev) {
+      case DriverScanPhase.idle:
+        next           = DriverScanPhase.boarded;
+        student.status = StudentStatus.onBusToHome;
+        break;
+      case DriverScanPhase.boarded:
+        next           = DriverScanPhase.droppedOff;
+        student.status = StudentStatus.atHome;
+        break;
+      case DriverScanPhase.droppedOff:
+        final alertTitle = 'Driver scan alert';
+        final alertBody =
+            '${student.name} scanned again after drop-off · School notified';
+        operationalAlerts.insert(
+          0,
+          OperationalAlert(
+            id:        'scan_${studentId}_${DateTime.now().millisecondsSinceEpoch}',
+            title:     alertTitle,
+            body:      alertBody,
+            createdAt: DateTime.now(),
+          ),
+        );
+        // Persist the operational alert so school staff see it too.
+        final alertSchoolId = currentProfile?.schoolId;
+        if (isSupabaseConfigured && alertSchoolId != null) {
+          _persistScanAlert(alertSchoolId, alertTitle, alertBody);
+        }
+        break;
+    }
+
+    _driverScanPhase[studentId] = next;
+    final nowLabel =
+        '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    student.lastMockUpdateLabel = '$nowLabel · Scan';
+    notifyListeners();
+
+    if (isSupabaseConfigured && currentProfile != null) {
+      final action = prev == DriverScanPhase.idle ? 'boarded' : 'dropped_off';
+      final busId  = currentDriverBusId ?? (buses.isNotEmpty ? buses.first.id : null);
+      DriverService.instance.recordScan(
+        driverId:  currentProfile!.id,
+        studentId: studentId,
+        action:    action,
+        busId:     busId,
+      );
+      StudentService.instance.updateStatus(
+        id:     studentId,
+        status: _studentStatusToDb(student.status),
+        label:  '$nowLabel · Scan',
+      );
+    }
+
+    switch (prev) {
+      case DriverScanPhase.idle:
+        return DriverScanOutcome(
+          phaseAfter:  DriverScanPhase.boarded,
+          studentName: student.name,
+          title:       'On board',
+          detail:      '${student.name} marked as pickup / on bus.',
+          warning:     false,
+        );
+      case DriverScanPhase.boarded:
+        return DriverScanOutcome(
+          phaseAfter:  DriverScanPhase.droppedOff,
+          studentName: student.name,
+          title:       'Dropped off',
+          detail:      '${student.name} safely dropped off.',
+          warning:     false,
+        );
+      case DriverScanPhase.droppedOff:
+        return DriverScanOutcome(
+          phaseAfter:  DriverScanPhase.droppedOff,
+          studentName: student.name,
+          title:       'Multiple scans',
+          detail:
+              'This student already completed drop-off. Please verify with dispatch.',
+          warning:        true,
+          showStaffAlert: true,
+        );
+    }
+  }
+
+  void resetDriverScanDemo(String studentId) {
+    _driverScanPhase.remove(studentId);
+    notifyListeners();
+  }
+
+  // ── Gate lookup ───────────────────────────────────────────────────────────
+
+  static String normalizeDigits(String raw) =>
+      raw.replaceAll(RegExp(r'\D'), '');
+
+  GatePickupPersonProfile? lookupGatePickupPersonByNationalId(String raw) {
+    final q = raw.trim();
+    if (q.isEmpty) return null;
+    for (final p in gatePickupDirectory) {
+      if (p.nationalId == q) return p;
+    }
+    return null;
+  }
+
+  GatePickupPersonProfile? lookupGatePickupPersonByPhone(String raw) {
+    final d = normalizeDigits(raw);
+    if (d.isEmpty) return null;
+    for (final p in gatePickupDirectory) {
+      if (p.phoneDigits == d ||
+          d.endsWith(p.phoneDigits) ||
+          p.phoneDigits.endsWith(d)) return p;
+    }
+    return null;
+  }
+
+  // Async Supabase gate lookup (returns null when not configured)
+  Future<GatePickupPersonProfile?> lookupGatePersonAsync({
+    String? nationalId,
+    String? phone,
+  }) async {
+    if (!isSupabaseConfigured) {
+      if (nationalId != null) return lookupGatePickupPersonByNationalId(nationalId);
+      if (phone != null)      return lookupGatePickupPersonByPhone(phone);
+      return null;
+    }
+
+    try {
+      final profileService = supabase.from('profiles');
+      Map<String, dynamic>? row;
+
+      if (nationalId != null && nationalId.trim().isNotEmpty) {
+        row = await profileService
+            .select('*, parent_students(student_id), guardian_students:guardians(id)')
+            .eq('national_id', nationalId.trim())
+            .maybeSingle();
+      } else if (phone != null && phone.isNotEmpty) {
+        final d = normalizeDigits(phone);
+        final rows = await profileService
+            .select()
+            .ilike('phone', '%$d%')
+            .limit(1);
+        row = rows.isNotEmpty ? rows.first : null;
+      }
+
+      if (row == null) return null;
+
+      // Resolve linked children names for the verified person.
+      final personId = row['id'] as String?;
+      final linkedChildren = <String>[];
+      if (personId != null) {
+        try {
+          final links = await supabase
+              .from('parent_students')
+              .select('students(name)')
+              .eq('parent_id', personId);
+          for (final l in links) {
+            final s = l['students'];
+            if (s is Map && s['name'] != null) {
+              linkedChildren.add(s['name'].toString());
+            }
+          }
+        } catch (_) {}
+      }
+
+      return GatePickupPersonProfile(
+        nationalId:          (row['national_id'] as String?) ?? '',
+        phoneDigits:         normalizeDigits((row['phone'] as String?) ?? ''),
+        displayPhone:        (row['phone'] as String?) ?? '',
+        fullName:            row['full_name'] as String,
+        kind:                (row['role'] as String) == 'guardian'
+            ? GatePickupPersonKind.guardian
+            : GatePickupPersonKind.parent,
+        linkedChildren:      linkedChildren,
+        authorizationLabel:  'Verified · Active',
+        allowedActionLabel:  'Pickup & drop-off',
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Guardian helpers ──────────────────────────────────────────────────────
+
+  bool isGuardianAssignedChild(DemoParentChild c) =>
+      guardianProfile.assignedChildNames.contains(c.name);
+
+  List<DemoParentChild> guardianLinkedDemoChildren() =>
+      parentDemoChildren.where(isGuardianAssignedChild).toList();
+
+  Student? studentMatchingDemoChild(DemoParentChild c) {
+    try {
+      return students.firstWhere((s) => s.name == c.name);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void setGuardianPickupIntent(String demoChildId, GuardianPickupIntent intent) {
+    guardianPickupIntentByChildId[demoChildId] = intent;
+    notifyListeners();
+  }
+
+  GuardianPickupIntent guardianPickupIntentFor(String demoChildId) =>
+      guardianPickupIntentByChildId[demoChildId] ?? GuardianPickupIntent.none;
+
+  // ── Misc helpers ──────────────────────────────────────────────────────────
+
+  bool studentHasPendingPickupRequest(Student s) {
+    for (final r in requests) {
+      if (r.status != RequestStatus.pending) continue;
+      if (r.studentId == s.id)   return true;
+      if (demoChildName(r.studentId) == s.name) return true;
+    }
+    return false;
+  }
+
+  DemoParentChild? demoChild(String id) {
+    try {
+      return parentDemoChildren.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String demoChildName(String studentId) {
+    final d = demoChild(studentId);
+    if (d != null) return d.name;
+    try {
+      return students.firstWhere((s) => s.id == studentId).name;
+    } catch (_) {
+      return studentId;
+    }
+  }
+
+  bool verifyPickupQrMock({required bool valid}) => valid;
+
+  int countStudentsWhere(bool Function(Student s) predicate) =>
+      students.where(predicate).length;
+
+  // ── Dispose ───────────────────────────────────────────────────────────────
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _studentsSub?.cancel();
+    _busesSub?.cancel();
+    _requestsSub?.cancel();
+    _alertsSub?.cancel();
+    super.dispose();
   }
 }

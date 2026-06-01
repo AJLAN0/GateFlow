@@ -11,24 +11,39 @@ import 'index.dart';
 
 import 'package:provider/provider.dart';
 import 'data/mock_state.dart';
+import 'backend/supabase/supabase_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoRouter.optionURLReflectsImperativeAPIs = true;
   usePathUrlStrategy();
 
-  // await initFirebase(); // Firebase is ignored for the Mock prototype
+  // Initialize Supabase — guarded against hot-restart double-init on Flutter Web
+  // (Dart statics persist across hot restarts, so instance may already exist).
+  if (isSupabaseConfigured) {
+    try {
+      await initSupabase();
+    } catch (_) {
+      // Already initialized — safe to continue.
+    }
+  }
+
+  // await initFirebase(); // Firebase kept for future use
+
+  final mockState = MockState();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => MockState(),
-      child: MyApp(),
+    ChangeNotifierProvider.value(
+      value: mockState,
+      child: MyApp(mockState: mockState),
     ),
   );
 }
 
 class MyApp extends StatefulWidget {
-  // This widget is the root of your application.
+  const MyApp({super.key, required this.mockState});
+  final MockState mockState;
+
   @override
   State<MyApp> createState() => _MyAppState();
 
@@ -41,6 +56,7 @@ class _MyAppState extends State<MyApp> {
 
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
+
   String getRoute([RouteMatch? routeMatch]) {
     final RouteMatch lastMatch =
         routeMatch ?? _router.routerDelegate.currentConfiguration.last;
@@ -54,12 +70,12 @@ class _MyAppState extends State<MyApp> {
       _router.routerDelegate.currentConfiguration.matches
           .map((e) => getRoute(e))
           .toList();
+
   @override
   void initState() {
     super.initState();
-
     _appStateNotifier = AppStateNotifier.instance;
-    _router = createRouter(_appStateNotifier);
+    _router           = createRouter(_appStateNotifier, widget.mockState);
   }
 
   void setThemeMode(ThemeMode mode) => safeSetState(() {
@@ -70,7 +86,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'test',
+      title: 'GateFlow',
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

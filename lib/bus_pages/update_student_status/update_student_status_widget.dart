@@ -2,10 +2,10 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../data/mock_state.dart';
 import 'update_student_status_model.dart';
 export 'update_student_status_model.dart';
 
@@ -52,6 +52,48 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final sid = GoRouterState.of(context).uri.queryParameters['sid'] ?? '';
+    final mock = context.watch<MockState>();
+    final driverBusId = mock.currentDriverBusId ?? '';
+    Student student;
+    try {
+      student = sid.isEmpty
+          ? mock.students.firstWhere((s) => (s.busId ?? '') == driverBusId)
+          : mock.students.firstWhere((s) => s.id == sid);
+    } catch (_) {
+      student = mock.students.isNotEmpty ? mock.students.first : Student(
+        id: '', name: 'No student', grade: '', status: StudentStatus.atHome);
+    }
+
+    String labelStatus(StudentStatus s) {
+      switch (s) {
+        case StudentStatus.atHome:
+          return 'At home';
+        case StudentStatus.atSchool:
+          return 'At school';
+        case StudentStatus.onBusToSchool:
+        case StudentStatus.onBusToHome:
+          return 'On bus';
+        case StudentStatus.pickedUpByCar:
+          return 'Car pickup';
+      }
+    }
+
+    void apply(StudentStatus next) {
+      mock.updateStudentStatus(student.id, next);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Text(
+            '${student.name} → ${labelStatus(next)}',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -145,7 +187,7 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Saleh Ahmed',
+                                      student.name,
                                       style: FlutterFlowTheme.of(context)
                                           .titleMedium
                                           .override(
@@ -165,7 +207,7 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                                           ),
                                     ),
                                     Text(
-                                      'Grade 8 • ID: ST2024-089',
+                                      '${student.grade} · ID: ${student.id}',
                                       style: FlutterFlowTheme.of(context)
                                           .bodyMedium
                                           .override(
@@ -224,7 +266,11 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                       Column(
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          Container(
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () =>
+                                apply(StudentStatus.onBusToHome),
+                            child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12.0),
@@ -325,7 +371,11 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                               ),
                             ),
                           ),
-                          Container(
+                          ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => apply(StudentStatus.atSchool),
+                            child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: FlutterFlowTheme.of(context)
@@ -424,7 +474,11 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                               ),
                             ),
                           ),
-                          Container(
+                          ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => apply(StudentStatus.atHome),
+                            child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: FlutterFlowTheme.of(context)
@@ -523,6 +577,7 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                               ),
                             ),
                           ),
+                          ),
                         ].divide(SizedBox(height: 12.0)),
                       ),
                     ].divide(SizedBox(height: 8.0)),
@@ -531,9 +586,7 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                     padding:
                         EdgeInsetsDirectional.fromSTEB(6.0, 40.0, 6.0, 0.0),
                     child: FFButtonWidget(
-                      onPressed: () {
-                        print('Button pressed ...');
-                      },
+                      onPressed: () => context.safePop(),
                       text: 'Update Status',
                       options: FFButtonOptions(
                         width: double.infinity,
