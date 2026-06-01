@@ -15,6 +15,9 @@ import 'authentication_model.dart';
 
 export 'authentication_model.dart';
 
+/// Set to `true` to show demo quick sign-in + Supabase seed tools on login.
+const bool kShowLoginDevTools = false;
+
 class AuthenticationWidget extends StatefulWidget {
   const AuthenticationWidget({super.key});
 
@@ -245,23 +248,26 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   _buildLoginForm(),
-                                  const SizedBox(height: 20),
-                                  _buildQuickSignIn(),
-                                  if (!isSupabaseConfigured) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Offline mode — quick sign-in uses mock data only.',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: GateFlowColors.textSecondary,
+                                  if (kShowLoginDevTools) ...[
+                                    const SizedBox(height: 20),
+                                    _buildQuickSignIn(),
+                                    if (!isSupabaseConfigured) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Offline mode — quick sign-in uses mock data only.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: GateFlowColors.textSecondary,
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                    const SizedBox(height: 16),
+                                    const Divider(
+                                        color: GateFlowColors.divider,
+                                        height: 1),
+                                    const SizedBox(height: 16),
+                                    _buildSeedSection(),
                                   ],
-                                  const SizedBox(height: 16),
-                                  const Divider(
-                                      color: GateFlowColors.divider, height: 1),
-                                  const SizedBox(height: 16),
-                                  _buildSeedSection(),
                                 ],
                               ),
                             ),
