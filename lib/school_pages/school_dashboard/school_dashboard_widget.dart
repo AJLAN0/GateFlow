@@ -15,7 +15,7 @@ export 'school_dashboard_model.dart';
 /// School staff (admin) dashboard.
 ///
 /// Modernized layout: gradient hero header, live stats grid, primary
-/// "Verify Pickup" CTA, and an organized 2x3 admin actions grid covering
+/// Primary CTA: **Gate Verification**, and an organized 2x3 admin actions grid covering
 /// every part of the system staff need to reach (system management,
 /// schedules, time requests, student status, bus status, notifications).
 class SchoolDashboardWidget extends StatefulWidget {
@@ -47,7 +47,9 @@ class _SchoolDashboardWidgetState extends State<SchoolDashboardWidget> {
   Widget build(BuildContext context) {
     final mockState = context.watch<MockState>();
     final atSchool = mockState.students
-        .where((s) => s.status == StudentStatus.atSchool)
+        .where((s) =>
+            s.status == StudentStatus.atSchool ||
+            s.status == StudentStatus.waitingForDismissal)
         .length;
     final atHome = mockState.students
         .where((s) =>
@@ -404,7 +406,7 @@ class _VerifyCta extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Verify Pickup',
+                      'Gate Verification',
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -413,7 +415,7 @@ class _VerifyCta extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Scan QR or check ID at the gate',
+                      'Verify parent or guardian at the gate',
                       style: GoogleFonts.inter(
                         fontSize: 12.5,
                         color: GateFlowColors.textSecondary,

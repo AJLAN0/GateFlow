@@ -16,7 +16,7 @@ import 'authentication_model.dart';
 export 'authentication_model.dart';
 
 /// Set to `true` to show demo quick sign-in + Supabase seed tools on login.
-const bool kShowLoginDevTools = false;
+const bool kShowLoginDevTools = true;
 
 class AuthenticationWidget extends StatefulWidget {
   const AuthenticationWidget({super.key});

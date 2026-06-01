@@ -17,7 +17,7 @@ import 'student_status_model.dart';
 
 export 'student_status_model.dart';
 
-enum _StudentFilterKey { all, atSchool, onBus, atHome, pending }
+enum _StudentFilterKey { all, atSchool, waitingDismissal, onBus, atHome, pending }
 
 class StudentStatusWidget extends StatefulWidget {
   const StudentStatusWidget({super.key});
@@ -57,6 +57,8 @@ class _StudentStatusWidgetState extends State<StudentStatusWidget> {
         return true;
       case _StudentFilterKey.atSchool:
         return s.status == StudentStatus.atSchool;
+      case _StudentFilterKey.waitingDismissal:
+        return s.status == StudentStatus.waitingForDismissal;
       case _StudentFilterKey.onBus:
         return s.status == StudentStatus.onBusToSchool ||
             s.status == StudentStatus.onBusToHome;
@@ -174,6 +176,12 @@ class _StudentStatusWidgetState extends State<StudentStatusWidget> {
                       selected: _filter == _StudentFilterKey.atSchool,
                       onTap: () => safeSetState(
                           () => _filter = _StudentFilterKey.atSchool),
+                    ),
+                    _FilterChip(
+                      label: 'Dismissal',
+                      selected: _filter == _StudentFilterKey.waitingDismissal,
+                      onTap: () => safeSetState(() =>
+                          _filter = _StudentFilterKey.waitingDismissal),
                     ),
                     _FilterChip(
                       label: 'On bus',

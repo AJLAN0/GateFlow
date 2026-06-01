@@ -71,6 +71,8 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
           return 'At home';
         case StudentStatus.atSchool:
           return 'At school';
+        case StudentStatus.waitingForDismissal:
+          return 'Waiting dismissal';
         case StudentStatus.onBusToSchool:
         case StudentStatus.onBusToHome:
           return 'On bus';
@@ -78,6 +80,11 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
           return 'Car pickup';
       }
     }
+
+    final canBoardMorning = student.status == StudentStatus.atHome;
+    final canBoardAfternoon =
+        student.status == StudentStatus.waitingForDismissal;
+    final canDropOff = student.status == StudentStatus.onBusToHome;
 
     void apply(StudentStatus next) {
       mock.updateStudentStatus(student.id, next);
@@ -268,8 +275,13 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                         children: [
                           InkWell(
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () =>
-                                apply(StudentStatus.onBusToHome),
+                            onTap: canBoardMorning || canBoardAfternoon
+                                ? () => apply(
+                                      canBoardAfternoon
+                                          ? StudentStatus.onBusToHome
+                                          : StudentStatus.onBusToSchool,
+                                    )
+                                : null,
                             child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
@@ -314,22 +326,17 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                                               .override(
                                                 font: GoogleFonts.interTight(
                                                   fontWeight: FontWeight.w600,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .titleSmall
-                                                          .fontStyle,
                                                 ),
                                                 letterSpacing: 0.0,
                                                 fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
                                               ),
                                         ),
                                         Text(
-                                          'Student is currently on the bus',
+                                          canBoardAfternoon
+                                              ? 'Board for afternoon route'
+                                              : canBoardMorning
+                                                  ? 'Board for morning route'
+                                                  : 'Only available from home or after dismissal',
                                           style: FlutterFlowTheme.of(context)
                                               .bodySmall
                                               .override(
@@ -339,24 +346,11 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                                                               context)
                                                           .bodySmall
                                                           .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodySmall
-                                                          .fontStyle,
                                                 ),
                                                 color:
                                                     FlutterFlowTheme.of(context)
                                                         .secondaryText,
                                                 letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .fontStyle,
                                               ),
                                         ),
                                       ].divide(SizedBox(height: 4.0)),
@@ -374,7 +368,7 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                           ),
                           InkWell(
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () => apply(StudentStatus.atSchool),
+                            onTap: null,
                             child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
@@ -477,7 +471,9 @@ class _UpdateStudentStatusWidgetState extends State<UpdateStudentStatusWidget> {
                           ),
                           InkWell(
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () => apply(StudentStatus.atHome),
+                            onTap: canDropOff
+                                ? () => apply(StudentStatus.atHome)
+                                : null,
                             child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
