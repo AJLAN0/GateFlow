@@ -268,7 +268,7 @@ CREATE TRIGGER tg_requests_upd         BEFORE UPDATE ON pickup_requests   FOR EA
 CREATE TRIGGER tg_schedules_upd        BEFORE UPDATE ON daily_schedules   FOR EACH ROW EXECUTE FUNCTION fn_updated_at();
 
 -- =============================================================================
--- AUTO-CREATE PROFILE ON SIGNUP
+-- AUTO-CREATE PROFILE ON SIGNUP.
 -- =============================================================================
 CREATE OR REPLACE FUNCTION fn_handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
