@@ -81,6 +81,9 @@ class StudentService {
     required String schoolId,
     String transportType = 'car',
     String? busId,
+    String? pickupLocationLabel,
+    double? latitude,
+    double? longitude,
   }) async {
     final row = await supabase
         .from('students')
@@ -90,6 +93,10 @@ class StudentService {
           'school_id':      schoolId,
           'transport_type': transportType,
           if (busId != null) 'bus_id': busId,
+          if (pickupLocationLabel != null)
+            'pickup_location_label': pickupLocationLabel,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
         })
         .select()
         .single();

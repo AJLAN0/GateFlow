@@ -15,6 +15,9 @@ import 'authentication_model.dart';
 
 export 'authentication_model.dart';
 
+/// Set to `true` to show demo quick sign-in + Supabase seed tools on login.
+const bool kShowLoginDevTools = false;
+
 class AuthenticationWidget extends StatefulWidget {
   const AuthenticationWidget({super.key});
 
@@ -91,7 +94,71 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
     }
   }
 
+  Future<void> _quickSignIn(DemoAccount account) async {
+    if (_submitting) return;
+
+    setState(() => _submitting = true);
+    final appState = context.read<MockState>();
+
+    String? error;
+    if (isSupabaseConfigured) {
+      error = await appState.signInWithEmailPassword(
+        account.email,
+        account.password,
+      );
+    } else {
+      appState.loginAs(_userRoleForAccount(account));
+    }
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: GateFlowColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    _navigateForRole(
+      isSupabaseConfigured
+          ? appState.currentUserRole
+          : _userRoleForAccount(account),
+    );
+  }
+
+  UserRole _userRoleForAccount(DemoAccount account) {
+    switch (account.role) {
+      case 'parent':
+        return UserRole.parent;
+      case 'school_staff':
+        return UserRole.schoolStaff;
+      case 'bus_driver':
+        return UserRole.busDriver;
+      case 'guardian':
+        return UserRole.guardian;
+      default:
+        return UserRole.none;
+    }
+  }
+
+  DemoAccount? _demoAccountForRole(UserRole role) {
+    for (final account in kDemoAccounts) {
+      if (_userRoleForAccount(account) == role) return account;
+    }
+    return null;
+  }
+
   void _enterAs(UserRole role) {
+    final account = _demoAccountForRole(role);
+    if (account != null) {
+      _quickSignIn(account);
+      return;
+    }
     context.read<MockState>().loginAs(role);
     _navigateForRole(role);
   }
@@ -181,18 +248,26 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   _buildLoginForm(),
-                                  if (!isSupabaseConfigured) ...[
-                                    const SizedBox(height: 24),
-                                    const Divider(
-                                        color: GateFlowColors.divider, height: 1),
+                                  if (kShowLoginDevTools) ...[
                                     const SizedBox(height: 20),
-                                    _buildDemoPicker(),
+                                    _buildQuickSignIn(),
+                                    if (!isSupabaseConfigured) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Offline mode — quick sign-in uses mock data only.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: GateFlowColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 16),
+                                    const Divider(
+                                        color: GateFlowColors.divider,
+                                        height: 1),
+                                    const SizedBox(height: 16),
+                                    _buildSeedSection(),
                                   ],
-                                  const SizedBox(height: 16),
-                                  const Divider(
-                                      color: GateFlowColors.divider, height: 1),
-                                  const SizedBox(height: 16),
-                                  _buildSeedSection(),
                                 ],
                               ),
                             ),
@@ -370,41 +445,49 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
     );
   }
 
-  Widget _buildDemoPicker() {
+  Widget _buildQuickSignIn() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.science_outlined,
-                size: 16, color: GateFlowColors.textSecondary),
+            const Icon(Icons.bolt_rounded,
+                size: 16, color: GateFlowColors.brandPrimary),
             const SizedBox(width: 6),
             Text(
-              'Explore as a demo user',
+              isSupabaseConfigured
+                  ? 'Quick sign in (demo accounts)'
+                  : 'Explore as a demo user',
               style: GoogleFonts.inter(
-                color:        GateFlowColors.textSecondary,
-                fontSize:     12,
-                fontWeight:   FontWeight.w600,
-                letterSpacing: 0.3,
+                color: GateFlowColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
         ),
+        const SizedBox(height: 6),
+        Text(
+          'One tap — password is $kDemoPassword for all roles.',
+          style: GoogleFonts.inter(
+            color: GateFlowColors.textSecondary,
+            fontSize: 11,
+          ),
+        ),
         const SizedBox(height: 12),
         Wrap(
-          spacing:    8,
+          spacing: 8,
           runSpacing: 8,
           children: [
-            _demoChip('Parent',       Icons.family_restroom_rounded, UserRole.parent),
-            _demoChip('Guardian',     Icons.shield_outlined,         UserRole.guardian),
-            _demoChip('Bus Driver',   Icons.directions_bus_rounded,  UserRole.busDriver),
-            _demoChip('School Staff', Icons.school_rounded,          UserRole.schoolStaff),
+            _demoChip('Parent', Icons.family_restroom_rounded, UserRole.parent),
+            _demoChip('School Staff', Icons.school_rounded, UserRole.schoolStaff),
+            _demoChip('Bus Driver', Icons.directions_bus_rounded, UserRole.busDriver),
+            _demoChip('Guardian', Icons.shield_outlined, UserRole.guardian),
           ],
         ),
       ],
     );
   }
-
   Widget _buildSeedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,22 +521,42 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
         _AccountRow(
           email: 'parent@demo.gateflow.app',
           label: 'Parent',
-          icon:  Icons.family_restroom_rounded,
+          icon: Icons.family_restroom_rounded,
+          onTap: _submitting
+              ? null
+              : () => _quickSignIn(
+                    kDemoAccounts.firstWhere((a) => a.role == 'parent'),
+                  ),
         ),
         _AccountRow(
           email: 'staff@demo.gateflow.app',
           label: 'School Staff',
-          icon:  Icons.school_rounded,
+          icon: Icons.school_rounded,
+          onTap: _submitting
+              ? null
+              : () => _quickSignIn(
+                    kDemoAccounts.firstWhere((a) => a.role == 'school_staff'),
+                  ),
         ),
         _AccountRow(
           email: 'driver@demo.gateflow.app',
           label: 'Bus Driver',
-          icon:  Icons.directions_bus_rounded,
+          icon: Icons.directions_bus_rounded,
+          onTap: _submitting
+              ? null
+              : () => _quickSignIn(
+                    kDemoAccounts.firstWhere((a) => a.role == 'bus_driver'),
+                  ),
         ),
         _AccountRow(
           email: 'guardian@demo.gateflow.app',
           label: 'Guardian',
-          icon:  Icons.shield_outlined,
+          icon: Icons.shield_outlined,
+          onTap: _submitting
+              ? null
+              : () => _quickSignIn(
+                    kDemoAccounts.firstWhere((a) => a.role == 'guardian'),
+                  ),
         ),
         const SizedBox(height: 10),
         SizedBox(
@@ -486,14 +589,16 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
 
   Widget _demoChip(String label, IconData icon, UserRole role) {
     return InkWell(
-      onTap:        () => _enterAs(role),
+      onTap: _submitting ? null : () => _enterAs(role),
       borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color:        const Color(0xFFF3F6FB),
+          color: GateFlowColors.brandPrimary.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(24),
-          border:       Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(
+            color: GateFlowColors.brandPrimary.withValues(alpha: 0.25),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -503,9 +608,9 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
             Text(
               label,
               style: GoogleFonts.inter(
-                color:      GateFlowColors.brandPrimary,
+                color: GateFlowColors.brandPrimary,
                 fontWeight: FontWeight.w600,
-                fontSize:   13,
+                fontSize: 13,
               ),
             ),
           ],
@@ -516,44 +621,71 @@ class _AuthenticationWidgetState extends State<AuthenticationWidget> {
 }
 
 class _AccountRow extends StatelessWidget {
-  final String  email;
-  final String  label;
+  final String email;
+  final String label;
   final IconData icon;
+  final VoidCallback? onTap;
 
   const _AccountRow({
     required this.email,
     required this.label,
     required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: GateFlowColors.brandPrimary),
-          const SizedBox(width: 8),
-          Text(
-            label,
+    final row = Row(
+      children: [
+        Icon(icon, size: 14, color: GateFlowColors.brandPrimary),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: GateFlowColors.textPrimary,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            email,
             style: GoogleFonts.inter(
-              fontSize:   12,
-              fontWeight: FontWeight.w600,
-              color:      GateFlowColors.textPrimary,
+              fontSize: 11,
+              color: GateFlowColors.textSecondary,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              email,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color:    GateFlowColors.textSecondary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+        ),
+        if (onTap != null) ...[
+          const SizedBox(width: 4),
+          Icon(Icons.login_rounded,
+              size: 14, color: GateFlowColors.brandPrimary),
         ],
+      ],
+    );
+
+    if (onTap == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: row,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Material(
+        color: const Color(0xFFF7F9FC),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: row,
+          ),
+        ),
       ),
     );
   }
