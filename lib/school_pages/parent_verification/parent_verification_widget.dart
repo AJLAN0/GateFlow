@@ -9,11 +9,12 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import '../../data/mock_state.dart';
 import '../../shared/gateflow_colors.dart';
 import '../../shared/status_pill.dart';
+import '../../shared/student_status_helpers.dart';
 import 'parent_verification_model.dart';
 
 export 'parent_verification_model.dart';
 
-/// Gate pickup verification: mock scan UI + ID/phone directory lookup + queue release.
+/// Gate verification: mock scan UI + ID/phone lookup + student release.
 class ParentVerificationWidget extends StatefulWidget {
   const ParentVerificationWidget({super.key});
 
@@ -130,24 +131,25 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
   }
 
   void _release(MockState mock, String childName) {
-    Student? s;
-    try {
-      s = mock.students.firstWhere((st) => st.name == childName);
-    } catch (_) {}
+    final s = mock.studentByName(childName);
     if (s == null) return;
 
-    ParentRequest? req;
-    try {
-      req = mock.approvedParentRequestsAwaitingPickup().firstWhere(
-            (r) => mock.demoChildName(r.studentId) == childName ||
-                r.studentId == s!.id,
-          );
-    } catch (_) {}
-
-    if (req != null) {
-      mock.releaseStudentAfterVerification(req.id);
+    final block = mock.gateReleaseBlockReason(s);
+    if (block != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(block),
+        ),
+      );
+      return;
     }
-    mock.updateStudentStatus(s.id, StudentStatus.pickedUpByCar);
+
+    final ok = mock.releaseStudentAtGate(s.id);
+    if (!ok) {
+      _notFound();
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -162,6 +164,19 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
         ),
       ),
     );
+    setState(() => _lookupResult = null);
+  }
+
+  bool _canRelease(MockState mock, String childName) {
+    final s = mock.studentByName(childName);
+    if (s == null) return false;
+    return mock.canReleaseStudentAtGate(s);
+  }
+
+  String? _releaseHint(MockState mock, String childName) {
+    final s = mock.studentByName(childName);
+    if (s == null) return null;
+    return mock.gateReleaseBlockReason(s);
   }
 
   @override
@@ -187,7 +202,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
             onPressed: () => context.safePop(),
           ),
           title: Text(
-            'Person Verification',
+            'Gate Verification',
             style: GoogleFonts.outfit(
               color: Colors.white,
               fontWeight: FontWeight.w600,
@@ -200,7 +215,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
             children: [
               Text(
-                'Option 1: QR Verification',
+                'Option 1: QR gate scan',
                 style: GoogleFonts.outfit(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -257,8 +272,8 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
               ),
               const SizedBox(height: 14),
               FFButtonWidget(
-                onPressed: () => _simulateQr(mock),
-                text: 'Simulate successful scan',
+                onPressed: _lookingUp ? null : () => _simulateQr(mock),
+                text: _lookingUp ? 'Verifying…' : 'Simulate successful scan',
                 options: FFButtonOptions(
                   width: double.infinity,
                   height: 48,
@@ -274,7 +289,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
               const SizedBox(height: 24),
               const Divider(height: 1, thickness: 1, color: GateFlowColors.divider),
               Text(
-                'Option 2: Manual Verification',
+                'Option 2: Manual gate verification',
                 style: GoogleFonts.outfit(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -315,8 +330,8 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
               ),
               const SizedBox(height: 10),
               FFButtonWidget(
-                onPressed: () => _lookupById(mock),
-                text: 'Verify by ID',
+                onPressed: _lookingUp ? null : () => _lookupById(mock),
+                text: _lookingUp ? 'Verifying…' : 'Verify by ID',
                 options: FFButtonOptions(
                   width: double.infinity,
                   height: 46,
@@ -353,8 +368,8 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
               ),
               const SizedBox(height: 10),
               FFButtonWidget(
-                onPressed: () => _lookupByPhone(mock),
-                text: 'Verify by phone',
+                onPressed: _lookingUp ? null : () => _lookupByPhone(mock),
+                text: _lookingUp ? 'Verifying…' : 'Verify by phone',
                 options: FFButtonOptions(
                   width: double.infinity,
                   height: 46,
@@ -369,6 +384,7 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
               ),
               if (_lookupResult != null) ...[
                 const SizedBox(height: 22),
+                _PersonResultCard(profile: _lookupResult!),
                 const SizedBox(height: 28),
                 const Divider(height: 32),
                 Text(
@@ -379,55 +395,102 @@ class _ParentVerificationWidgetState extends State<ParentVerificationWidget> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                ..._lookupResult!.linkedChildren.map((childName) => Padding(
+                if (_lookupResult!.linkedChildren.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: GateFlowColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: GateFlowColors.divider),
+                    ),
+                    child: Text(
+                      'No linked students found for this person.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: GateFlowColors.textSecondary,
+                      ),
+                    ),
+                  )
+                else
+                  ..._lookupResult!.linkedChildren.map((childName) {
+                    final canRelease = _canRelease(mock, childName);
+                    final hint = _releaseHint(mock, childName);
+                    final student = mock.studentByName(childName);
+                    return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Material(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {},
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: GateFlowColors.divider),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        childName,
-                                        style: GoogleFonts.inter(
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: GateFlowColors.divider),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          childName,
+                                          style: GoogleFonts.inter(
                                             fontWeight: FontWeight.w700,
-                                            fontSize: 15),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                FFButtonWidget(
-                                  onPressed: () => _release(mock, childName),
-                                  text: 'Release',
-                                  options: FFButtonOptions(
-                                    height: 36,
-                                    color: GateFlowColors.brandPrimary,
-                                    textStyle: GoogleFonts.inter(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        if (student != null) ...[
+                                          const SizedBox(height: 6),
+                                          statusPillForSchoolStudent(student),
+                                        ],
+                                      ],
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  FFButtonWidget(
+                                    onPressed: canRelease
+                                        ? () => _release(mock, childName)
+                                        : null,
+                                    text: 'Release',
+                                    options: FFButtonOptions(
+                                      height: 36,
+                                      color: canRelease
+                                          ? GateFlowColors.brandPrimary
+                                          : GateFlowColors.divider,
+                                      textStyle: GoogleFonts.inter(
+                                        color: canRelease
+                                            ? Colors.white
+                                            : GateFlowColors.textTertiary,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (hint != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  hint,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: GateFlowColors.textSecondary,
+                                    height: 1.3,
                                   ),
                                 ),
                               ],
-                            ),
+                            ],
                           ),
                         ),
                       ),
-                    )),
+                    );
+                  }),
               ],
             ],
           ),

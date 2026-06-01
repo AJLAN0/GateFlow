@@ -20,7 +20,14 @@ import '../backend/supabase/services/admin_service.dart';
 // =============================================================================
 // Enums (UI-layer, unchanged)
 // =============================================================================
-enum StudentStatus { atHome, onBusToSchool, atSchool, onBusToHome, pickedUpByCar }
+enum StudentStatus {
+  atHome,
+  onBusToSchool,
+  atSchool,
+  waitingForDismissal,
+  onBusToHome,
+  pickedUpByCar,
+}
 enum RequestStatus { pending, approved, rejected }
 enum BusStatus     { stationary, onRouteToSchool, onRouteToHome }
 enum UserRole      { parent, schoolStaff, busDriver, guardian, none }
@@ -689,21 +696,23 @@ class MockState extends ChangeNotifier {
   // ── DB → UI-model converters ──────────────────────────────────────────────
   static StudentStatus _studentStatusFromDb(String s) {
     switch (s) {
-      case 'on_bus_to_school': return StudentStatus.onBusToSchool;
-      case 'at_school':        return StudentStatus.atSchool;
-      case 'on_bus_to_home':   return StudentStatus.onBusToHome;
-      case 'picked_up_by_car': return StudentStatus.pickedUpByCar;
-      default:                 return StudentStatus.atHome;
+      case 'on_bus_to_school':       return StudentStatus.onBusToSchool;
+      case 'at_school':              return StudentStatus.atSchool;
+      case 'waiting_for_dismissal':  return StudentStatus.waitingForDismissal;
+      case 'on_bus_to_home':         return StudentStatus.onBusToHome;
+      case 'picked_up_by_car':       return StudentStatus.pickedUpByCar;
+      default:                       return StudentStatus.atHome;
     }
   }
 
   static String _studentStatusToDb(StudentStatus s) {
     switch (s) {
-      case StudentStatus.onBusToSchool: return 'on_bus_to_school';
-      case StudentStatus.atSchool:      return 'at_school';
-      case StudentStatus.onBusToHome:   return 'on_bus_to_home';
-      case StudentStatus.pickedUpByCar: return 'picked_up_by_car';
-      default:                          return 'at_home';
+      case StudentStatus.onBusToSchool:      return 'on_bus_to_school';
+      case StudentStatus.atSchool:           return 'at_school';
+      case StudentStatus.waitingForDismissal: return 'waiting_for_dismissal';
+      case StudentStatus.onBusToHome:        return 'on_bus_to_home';
+      case StudentStatus.pickedUpByCar:      return 'picked_up_by_car';
+      case StudentStatus.atHome:             return 'at_home';
     }
   }
 
@@ -869,17 +878,111 @@ class MockState extends ChangeNotifier {
 
   // ── Student mutations ─────────────────────────────────────────────────────
 
-  void updateStudentStatus(String id, StudentStatus newStatus) {
+  void updateStudentStatus(String id, StudentStatus newStatus, {String? label}) {
     final student = students.firstWhere((s) => s.id == id);
     student.status = newStatus;
+    if (label != null) {
+      student.lastMockUpdateLabel = label;
+    } else {
+      final nowLabel =
+          '${DateTime.now().hour.toString().padLeft(2, '0')}:'
+          '${DateTime.now().minute.toString().padLeft(2, '0')}';
+      student.lastMockUpdateLabel = '$nowLabel · Status updated';
+    }
+
+    if (newStatus == StudentStatus.atSchool ||
+        newStatus == StudentStatus.waitingForDismissal) {
+      _driverScanPhase.remove(id);
+    }
+
     notifyListeners();
 
     if (isSupabaseConfigured) {
       StudentService.instance.updateStatus(
         id:     id,
         status: _studentStatusToDb(newStatus),
+        label:  student.lastMockUpdateLabel,
       );
     }
+  }
+
+  Student? studentByName(String name) {
+    try {
+      return students.firstWhere((s) => s.name == name);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool canStaffCheckInStudent(Student s) =>
+      s.status == StudentStatus.onBusToSchool ||
+      s.status == StudentStatus.atHome;
+
+  bool canStaffMarkWaitingDismissal(Student s) =>
+      s.status == StudentStatus.atSchool;
+
+  bool canReleaseStudentAtGate(Student s) =>
+      s.status == StudentStatus.waitingForDismissal;
+
+  String? gateReleaseBlockReason(Student s) {
+    switch (s.status) {
+      case StudentStatus.waitingForDismissal:
+        return null;
+      case StudentStatus.atHome:
+      case StudentStatus.onBusToSchool:
+        return 'Student has not checked in at school yet.';
+      case StudentStatus.atSchool:
+        return 'School has not verified dismissal. Mark "Waiting dismissal" first.';
+      case StudentStatus.onBusToHome:
+        return 'Student is on the afternoon bus route.';
+      case StudentStatus.pickedUpByCar:
+        return 'Student was already released at the gate.';
+    }
+  }
+
+  void staffCheckInStudent(String studentId) {
+    final student = students.firstWhere((s) => s.id == studentId);
+    if (!canStaffCheckInStudent(student)) return;
+    final label =
+        '${DateTime.now().hour.toString().padLeft(2, '0')}:'
+        '${DateTime.now().minute.toString().padLeft(2, '0')} · Checked in';
+    updateStudentStatus(studentId, StudentStatus.atSchool, label: label);
+  }
+
+  void staffMarkWaitingDismissal(String studentId) {
+    final student = students.firstWhere((s) => s.id == studentId);
+    if (!canStaffMarkWaitingDismissal(student)) return;
+    final label =
+        '${DateTime.now().hour.toString().padLeft(2, '0')}:'
+        '${DateTime.now().minute.toString().padLeft(2, '0')} · Waiting dismissal';
+    updateStudentStatus(
+      studentId,
+      StudentStatus.waitingForDismissal,
+      label: label,
+    );
+  }
+
+  /// Gate release after ID verification. Returns false when student is not ready.
+  bool releaseStudentAtGate(String studentId) {
+    final student = students.firstWhere((s) => s.id == studentId);
+    if (!canReleaseStudentAtGate(student)) return false;
+
+    ParentRequest? req;
+    try {
+      req = approvedParentRequestsAwaitingPickup().firstWhere(
+        (r) => r.studentId == studentId,
+      );
+    } catch (_) {}
+
+    if (req != null) {
+      releaseStudentAfterVerification(req.id);
+    }
+
+    final label =
+        '${DateTime.now().hour.toString().padLeft(2, '0')}:'
+        '${DateTime.now().minute.toString().padLeft(2, '0')} · Released at gate';
+    updateStudentStatus(studentId, StudentStatus.pickedUpByCar, label: label);
+    return true;
   }
 
   void toggleChildAbsent(String childId, bool absent) {
@@ -1399,17 +1502,80 @@ class MockState extends ChangeNotifier {
   DriverScanOutcome recordDriverBoardingScan(String studentId) {
     final student = students.firstWhere((s) => s.id == studentId);
     final prev    = _driverScanPhase[studentId] ?? DriverScanPhase.idle;
-    DriverScanPhase next = prev;
+    final nowLabel =
+        '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}';
 
     switch (prev) {
       case DriverScanPhase.idle:
-        next           = DriverScanPhase.boarded;
-        student.status = StudentStatus.onBusToHome;
-        break;
+        if (student.status == StudentStatus.atHome) {
+          student.status = StudentStatus.onBusToSchool;
+          student.lastMockUpdateLabel = '$nowLabel · Boarded · to school';
+          _driverScanPhase[studentId] = DriverScanPhase.boarded;
+          notifyListeners();
+          _persistDriverScan(studentId, 'boarded', nowLabel);
+          return DriverScanOutcome(
+            phaseAfter:  DriverScanPhase.boarded,
+            studentName: student.name,
+            title:       'On board',
+            detail:      '${student.name} boarded for morning route.',
+            warning:     false,
+          );
+        }
+        if (student.status == StudentStatus.waitingForDismissal) {
+          student.status = StudentStatus.onBusToHome;
+          student.lastMockUpdateLabel = '$nowLabel · Boarded · going home';
+          _driverScanPhase[studentId] = DriverScanPhase.boarded;
+          notifyListeners();
+          _persistDriverScan(studentId, 'boarded', nowLabel);
+          return DriverScanOutcome(
+            phaseAfter:  DriverScanPhase.boarded,
+            studentName: student.name,
+            title:       'On board',
+            detail:      '${student.name} boarded afternoon bus.',
+            warning:     false,
+          );
+        }
+        return DriverScanOutcome(
+          phaseAfter:  DriverScanPhase.idle,
+          studentName: student.name,
+          title:       'Cannot board',
+          detail:      _driverBoardBlockReason(student),
+          warning:     true,
+        );
+
       case DriverScanPhase.boarded:
-        next           = DriverScanPhase.droppedOff;
-        student.status = StudentStatus.atHome;
-        break;
+        if (student.status == StudentStatus.onBusToHome) {
+          student.status = StudentStatus.atHome;
+          student.lastMockUpdateLabel = '$nowLabel · Dropped off';
+          _driverScanPhase[studentId] = DriverScanPhase.droppedOff;
+          notifyListeners();
+          _persistDriverScan(studentId, 'dropped_off', nowLabel);
+          return DriverScanOutcome(
+            phaseAfter:  DriverScanPhase.droppedOff,
+            studentName: student.name,
+            title:       'Dropped off',
+            detail:      '${student.name} safely dropped off.',
+            warning:     false,
+          );
+        }
+        if (student.status == StudentStatus.onBusToSchool) {
+          return DriverScanOutcome(
+            phaseAfter:  DriverScanPhase.boarded,
+            studentName: student.name,
+            title:       'Still en route',
+            detail:
+                '${student.name} is on the morning bus. Staff must check in at school.',
+            warning: true,
+          );
+        }
+        return DriverScanOutcome(
+          phaseAfter:  prev,
+          studentName: student.name,
+          title:       'Unexpected status',
+          detail:      'Cannot complete scan for ${student.name}.',
+          warning:     true,
+        );
+
       case DriverScanPhase.droppedOff:
         final alertTitle = 'Driver scan alert';
         final alertBody =
@@ -1423,64 +1589,54 @@ class MockState extends ChangeNotifier {
             createdAt: DateTime.now(),
           ),
         );
-        // Persist the operational alert so school staff see it too.
         final alertSchoolId = currentProfile?.schoolId;
         if (isSupabaseConfigured && alertSchoolId != null) {
           _persistScanAlert(alertSchoolId, alertTitle, alertBody);
         }
-        break;
-    }
-
-    _driverScanPhase[studentId] = next;
-    final nowLabel =
-        '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}';
-    student.lastMockUpdateLabel = '$nowLabel · Scan';
-    notifyListeners();
-
-    if (isSupabaseConfigured && currentProfile != null) {
-      final action = prev == DriverScanPhase.idle ? 'boarded' : 'dropped_off';
-      final busId  = currentDriverBusId ?? (buses.isNotEmpty ? buses.first.id : null);
-      DriverService.instance.recordScan(
-        driverId:  currentProfile!.id,
-        studentId: studentId,
-        action:    action,
-        busId:     busId,
-      );
-      StudentService.instance.updateStatus(
-        id:     studentId,
-        status: _studentStatusToDb(student.status),
-        label:  '$nowLabel · Scan',
-      );
-    }
-
-    switch (prev) {
-      case DriverScanPhase.idle:
         return DriverScanOutcome(
-          phaseAfter:  DriverScanPhase.boarded,
-          studentName: student.name,
-          title:       'On board',
-          detail:      '${student.name} marked as pickup / on bus.',
-          warning:     false,
-        );
-      case DriverScanPhase.boarded:
-        return DriverScanOutcome(
-          phaseAfter:  DriverScanPhase.droppedOff,
-          studentName: student.name,
-          title:       'Dropped off',
-          detail:      '${student.name} safely dropped off.',
-          warning:     false,
-        );
-      case DriverScanPhase.droppedOff:
-        return DriverScanOutcome(
-          phaseAfter:  DriverScanPhase.droppedOff,
-          studentName: student.name,
-          title:       'Multiple scans',
+          phaseAfter:     DriverScanPhase.droppedOff,
+          studentName:    student.name,
+          title:          'Multiple scans',
           detail:
               'This student already completed drop-off. Please verify with dispatch.',
           warning:        true,
           showStaffAlert: true,
         );
     }
+  }
+
+  String _driverBoardBlockReason(Student student) {
+    switch (student.status) {
+      case StudentStatus.onBusToSchool:
+        return '${student.name} is already on the morning bus.';
+      case StudentStatus.atSchool:
+        return 'Staff must mark "${student.name}" as waiting dismissal before boarding.';
+      case StudentStatus.onBusToHome:
+        return '${student.name} is already on the afternoon bus.';
+      case StudentStatus.pickedUpByCar:
+        return '${student.name} was already released at the gate.';
+      case StudentStatus.waitingForDismissal:
+        return '';
+      case StudentStatus.atHome:
+        return '';
+    }
+  }
+
+  void _persistDriverScan(String studentId, String action, String nowLabel) {
+    if (!isSupabaseConfigured || currentProfile == null) return;
+    final busId = currentDriverBusId ?? (buses.isNotEmpty ? buses.first.id : null);
+    DriverService.instance.recordScan(
+      driverId:  currentProfile!.id,
+      studentId: studentId,
+      action:    action,
+      busId:     busId,
+    );
+    final student = students.firstWhere((s) => s.id == studentId);
+    StudentService.instance.updateStatus(
+      id:     studentId,
+      status: _studentStatusToDb(student.status),
+      label:  student.lastMockUpdateLabel,
+    );
   }
 
   void resetDriverScanDemo(String studentId) {
@@ -1496,8 +1652,12 @@ class MockState extends ChangeNotifier {
   GatePickupPersonProfile? lookupGatePickupPersonByNationalId(String raw) {
     final q = raw.trim();
     if (q.isEmpty) return null;
+    final normalized = normalizeDigits(q);
     for (final p in gatePickupDirectory) {
-      if (p.nationalId == q) return p;
+      if (p.nationalId == q ||
+          (normalized.isNotEmpty && p.nationalId == normalized)) {
+        return p;
+      }
     }
     return null;
   }
@@ -1525,56 +1685,42 @@ class MockState extends ChangeNotifier {
     }
 
     try {
-      final profileService = supabase.from('profiles');
-      Map<String, dynamic>? row;
-
+      DbProfile? profile;
       if (nationalId != null && nationalId.trim().isNotEmpty) {
-        row = await profileService
-            .select('*, parent_students(student_id), guardian_students:guardians(id)')
-            .eq('national_id', nationalId.trim())
-            .maybeSingle();
-      } else if (phone != null && phone.isNotEmpty) {
-        final d = normalizeDigits(phone);
-        final rows = await profileService
-            .select()
-            .ilike('phone', '%$d%')
-            .limit(1);
-        row = rows.isNotEmpty ? rows.first : null;
+        profile = await ProfileService.instance.lookupByNationalId(nationalId);
+      } else if (phone != null && phone.trim().isNotEmpty) {
+        profile = await ProfileService.instance.lookupByPhone(phone);
+      }
+      if (profile == null) return null;
+
+      if (profile.role != 'parent' && profile.role != 'guardian') {
+        return null;
       }
 
-      if (row == null) return null;
-
-      // Resolve linked children names for the verified person.
-      final personId = row['id'] as String?;
-      final linkedChildren = <String>[];
-      if (personId != null) {
-        try {
-          final links = await supabase
-              .from('parent_students')
-              .select('students(name)')
-              .eq('parent_id', personId);
-          for (final l in links) {
-            final s = l['students'];
-            if (s is Map && s['name'] != null) {
-              linkedChildren.add(s['name'].toString());
-            }
-          }
-        } catch (_) {}
-      }
+      final linkedChildren =
+          await ProfileService.instance.fetchGateLinkedStudentNames(
+        profileId: profile.id,
+        role: profile.role,
+      );
 
       return GatePickupPersonProfile(
-        nationalId:          (row['national_id'] as String?) ?? '',
-        phoneDigits:         normalizeDigits((row['phone'] as String?) ?? ''),
-        displayPhone:        (row['phone'] as String?) ?? '',
-        fullName:            row['full_name'] as String,
-        kind:                (row['role'] as String) == 'guardian'
+        nationalId:         profile.nationalId ?? '',
+        phoneDigits:        normalizeDigits(profile.phone ?? ''),
+        displayPhone:       profile.phone ?? '',
+        fullName:           profile.fullName,
+        kind:               profile.role == 'guardian'
             ? GatePickupPersonKind.guardian
             : GatePickupPersonKind.parent,
-        linkedChildren:      linkedChildren,
-        authorizationLabel:  'Verified · Active',
-        allowedActionLabel:  'Pickup & drop-off',
+        linkedChildren:     linkedChildren,
+        authorizationLabel: profile.isActive
+            ? 'Verified · Active'
+            : 'Inactive account',
+        allowedActionLabel: profile.role == 'guardian'
+            ? 'Pickup only'
+            : 'Pickup & drop-off',
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('lookupGatePersonAsync failed: $e\n$st');
       return null;
     }
   }

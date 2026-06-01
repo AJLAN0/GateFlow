@@ -63,6 +63,13 @@ void main() {
       expect(person.kind, GatePickupPersonKind.parent);
     });
 
+    test('lookupGatePickupPersonByNationalId accepts formatted ID', () {
+      final person =
+          state.lookupGatePickupPersonByNationalId('1234-5678-90');
+      expect(person, isNotNull);
+      expect(person!.nationalId, '1234567890');
+    });
+
     test('lookupGatePickupPersonByPhone finds partial match', () {
       final person = state.lookupGatePickupPersonByPhone('501112233');
       expect(person, isNotNull);
@@ -72,6 +79,18 @@ void main() {
     test('lookupGatePickupPersonByNationalId returns null when empty', () {
       expect(state.lookupGatePickupPersonByNationalId(''), isNull);
       expect(state.lookupGatePickupPersonByNationalId('0000000000'), isNull);
+    });
+
+    test('releaseStudentAtGate blocked until waiting dismissal', () {
+      final student = state.students.firstWhere((s) => s.name == 'Noah Khaled');
+      expect(student.status, StudentStatus.onBusToSchool);
+      expect(state.releaseStudentAtGate(student.id), isFalse);
+
+      state.staffCheckInStudent(student.id);
+      expect(state.releaseStudentAtGate(student.id), isFalse);
+
+      state.staffMarkWaitingDismissal(student.id);
+      expect(state.releaseStudentAtGate(student.id), isTrue);
     });
   });
 }

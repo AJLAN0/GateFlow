@@ -8,6 +8,11 @@ StatusPill statusPillForSchoolStudent(Student s) {
       return const StatusPill(label: 'At home', tone: StatusTone.success);
     case StudentStatus.atSchool:
       return const StatusPill(label: 'At school', tone: StatusTone.info);
+    case StudentStatus.waitingForDismissal:
+      return const StatusPill(
+        label: 'Waiting dismissal',
+        tone: StatusTone.pending,
+      );
     case StudentStatus.onBusToSchool:
     case StudentStatus.onBusToHome:
       return const StatusPill(label: 'On bus', tone: StatusTone.pending);
@@ -21,7 +26,9 @@ String studentStatusCopy(Student s) {
     case StudentStatus.atHome:
       return 'At home';
     case StudentStatus.atSchool:
-      return 'At school';
+      return 'At school · checked in';
+    case StudentStatus.waitingForDismissal:
+      return 'Waiting dismissal · ready for pickup';
     case StudentStatus.onBusToSchool:
       return 'On bus · to school';
     case StudentStatus.onBusToHome:

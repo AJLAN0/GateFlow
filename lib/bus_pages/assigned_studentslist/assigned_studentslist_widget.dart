@@ -64,6 +64,11 @@ class _AssignedStudentslistWidgetState
         return const StatusPill(label: 'At home', tone: StatusTone.success);
       case StudentStatus.atSchool:
         return const StatusPill(label: 'At school', tone: StatusTone.info);
+      case StudentStatus.waitingForDismissal:
+        return const StatusPill(
+          label: 'Waiting dismissal',
+          tone: StatusTone.pending,
+        );
       case StudentStatus.onBusToSchool:
       case StudentStatus.onBusToHome:
         return const StatusPill(label: 'On bus', tone: StatusTone.pending);
@@ -79,7 +84,8 @@ class _AssignedStudentslistWidgetState
         return s.status == StudentStatus.atHome ||
             s.status == StudentStatus.pickedUpByCar;
       case 'school':
-        return s.status == StudentStatus.atSchool;
+        return s.status == StudentStatus.atSchool ||
+            s.status == StudentStatus.waitingForDismissal;
       case 'bus':
         return s.status == StudentStatus.onBusToSchool ||
             s.status == StudentStatus.onBusToHome;

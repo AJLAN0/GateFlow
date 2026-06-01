@@ -12,22 +12,42 @@ void main() {
       state.loginAs(UserRole.busDriver);
     });
 
-    test('first scan boards student (idle -> boarded)', () {
-      const studentId = 's3';
+    test('morning scan boards student from home', () {
+      const studentId = 's2';
+      state.updateStudentStatus(studentId, StudentStatus.atHome);
       state.resetDriverScanDemo(studentId);
 
       final outcome = state.recordDriverBoardingScan(studentId);
       expect(outcome.phaseAfter, DriverScanPhase.boarded);
       expect(outcome.warning, isFalse);
-      expect(outcome.title, 'On board');
+      expect(
+        state.students.firstWhere((s) => s.id == studentId).status,
+        StudentStatus.onBusToSchool,
+      );
+    });
+
+    test('afternoon scan boards student after dismissal', () {
+      const studentId = 's4';
+      state.updateStudentStatus(
+        studentId,
+        StudentStatus.waitingForDismissal,
+      );
+      state.resetDriverScanDemo(studentId);
+
+      final outcome = state.recordDriverBoardingScan(studentId);
+      expect(outcome.phaseAfter, DriverScanPhase.boarded);
       expect(
         state.students.firstWhere((s) => s.id == studentId).status,
         StudentStatus.onBusToHome,
       );
     });
 
-    test('second scan drops off student (boarded -> droppedOff)', () {
-      const studentId = 's3';
+    test('second scan drops off student on afternoon route', () {
+      const studentId = 's4';
+      state.updateStudentStatus(
+        studentId,
+        StudentStatus.waitingForDismissal,
+      );
       state.resetDriverScanDemo(studentId);
       state.recordDriverBoardingScan(studentId);
 
@@ -40,8 +60,22 @@ void main() {
       );
     });
 
+    test('cannot board student still at school without dismissal', () {
+      const studentId = 's1';
+      state.updateStudentStatus(studentId, StudentStatus.atSchool);
+      state.resetDriverScanDemo(studentId);
+
+      final outcome = state.recordDriverBoardingScan(studentId);
+      expect(outcome.warning, isTrue);
+      expect(outcome.title, 'Cannot board');
+    });
+
     test('third scan triggers staff alert (triple-scan)', () {
-      const studentId = 's3';
+      const studentId = 's4';
+      state.updateStudentStatus(
+        studentId,
+        StudentStatus.waitingForDismissal,
+      );
       state.resetDriverScanDemo(studentId);
       state.recordDriverBoardingScan(studentId);
       state.recordDriverBoardingScan(studentId);
@@ -56,10 +90,11 @@ void main() {
     });
 
     test('resetDriverScanDemo clears phase', () {
-      const studentId = 's3';
+      const studentId = 's2';
+      state.updateStudentStatus(studentId, StudentStatus.atHome);
       state.recordDriverBoardingScan(studentId);
       state.resetDriverScanDemo(studentId);
-      // After reset, next scan should board again
+      state.updateStudentStatus(studentId, StudentStatus.atHome);
       final outcome = state.recordDriverBoardingScan(studentId);
       expect(outcome.phaseAfter, DriverScanPhase.boarded);
     });

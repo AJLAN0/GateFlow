@@ -113,7 +113,9 @@ String _studentDetail(Student s) {
           ? 'On bus · ${s.lastMockUpdateLabel}'
           : 'On bus — next stop';
     case StudentStatus.atSchool:
-      return 'Awaiting afternoon pickup';
+      return 'On campus · checked in';
+    case StudentStatus.waitingForDismissal:
+      return 'Ready for afternoon pickup / bus';
   }
 }
 

@@ -42,13 +42,72 @@ class ProfileService {
   // Lookup by national ID (gate verification)
   // ---------------------------------------------------------------------------
   Future<DbProfile?> lookupByNationalId(String nationalId) async {
-    final row = await supabase
-        .from('profiles')
-        .select()
-        .eq('national_id', nationalId.trim())
-        .maybeSingle();
-    if (row == null) return null;
-    return DbProfile.fromJson(row);
+    final trimmed = nationalId.trim();
+    if (trimmed.isEmpty) return null;
+
+    final normalized = trimmed.replaceAll(RegExp(r'\D'), '');
+    final candidates = <String>{
+      trimmed,
+      if (normalized.isNotEmpty) normalized,
+    };
+
+    for (final candidate in candidates) {
+      final row = await supabase
+          .from('profiles')
+          .select()
+          .eq('national_id', candidate)
+          .maybeSingle();
+      if (row != null) return DbProfile.fromJson(row);
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Linked student names for gate pickup (parent or guardian profile)
+  // ---------------------------------------------------------------------------
+  Future<List<String>> fetchGateLinkedStudentNames({
+    required String profileId,
+    required String role,
+  }) async {
+    if (role == 'parent') {
+      final rows = await supabase
+          .from('parent_students')
+          .select('students(name)')
+          .eq('parent_id', profileId);
+      return _studentNamesFromJoinRows(rows);
+    }
+
+    if (role == 'guardian') {
+      final guardianRows = await supabase
+          .from('guardians')
+          .select('id')
+          .eq('guardian_user_id', profileId);
+      if (guardianRows.isEmpty) return [];
+
+      final names = <String>[];
+      for (final g in guardianRows) {
+        final guardianId = g['id'] as String;
+        final rows = await supabase
+            .from('guardian_students')
+            .select('students(name)')
+            .eq('guardian_id', guardianId);
+        names.addAll(_studentNamesFromJoinRows(rows));
+      }
+      return names;
+    }
+
+    return [];
+  }
+
+  List<String> _studentNamesFromJoinRows(List<dynamic> rows) {
+    final names = <String>[];
+    for (final row in rows) {
+      final student = row['students'];
+      if (student is Map && student['name'] != null) {
+        names.add(student['name'].toString());
+      }
+    }
+    return names;
   }
 
   // ---------------------------------------------------------------------------
